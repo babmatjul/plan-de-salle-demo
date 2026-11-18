@@ -397,7 +397,7 @@ const S={config:clone(CONFIG_DEFAUT),prochain:null,visites:{},attente:{},repas:[
 let decalage=0;                                  // avance de l'horloge simulée sur l'heure réelle (ms)
 const maintenant=()=>Date.now()+decalage;
 const UI={n:2,nom:'',prop:null,manuel:null,manuelAttente:null,selVisite:null,panneau:'normal',vueServeur:null,pinceau:'s1',zoom:1,pivot:false,
-  sync:'connexion',confirmFin:0,confirmHisto:0,chargement:false,configSale:false,vitesse:0,autoPlacer:true,simT:null,pretsConnus:null,selSale:null,pivotAuto:true,ecran:false,attenteRepliee:false,avisAuto:true,contactVisible:null,inscriptionsFinies:new Set()};
+  sync:'connexion',confirmFin:0,confirmHisto:0,chargement:false,configSale:false,vitesse:0,autoPlacer:true,simT:null,pretsConnus:null,selSale:null,pivotAuto:true,ecran:false,attenteRepliee:false,avisAuto:true,contactVisible:null,inscriptionsFinies:new Set(),theme:'auto'};
 let ST=null,PRETS={};
 // Connexion à Veloce, par le connecteur (dossier veloce/ du projet). Adresse et clé gardées sur cet appareil.
 const CLE_VELOCE='plan-salle-veloce-v1',PLACES=160;
@@ -522,10 +522,17 @@ function occSansReserves(saufId){const occ=occupees();for(const [id,c] of Object
 const CLE='plan-salle-v1',CLE_UI='plan-salle-ui-v1';
 function chargerLocal(){
   try{const d=JSON.parse(localStorage.getItem(CLE)||'null');if(d){S.config=normaliserConfig(d.config);S.prochain=d.prochain||null;S.visites=Object.fromEntries(Object.entries(d.visites||{}).filter(([,v])=>visiteValide(v)));S.attente=d.attente&&typeof d.attente==='object'?d.attente:{};S.repas=Array.isArray(d.repas)?d.repas:[];S.sale=d.sale&&typeof d.sale==='object'?d.sale:{};decalage=Number.isFinite(d.decalage)?d.decalage:0;}}catch(e){}
-  try{const u=JSON.parse(localStorage.getItem(CLE_UI)||'null');if(u){UI.pivot=!!u.pivot;if(ZOOMS.includes(u.zoom))UI.zoom=u.zoom;UI.vueServeur=u.vueServeur||null;UI.autoPlacer=u.autoPlacer!==false;UI.pivotAuto=u.pivotAuto!==false;UI.ecran=!!u.ecran;UI.attenteRepliee=!!u.attenteRepliee;UI.avisAuto=u.avisAuto!==false;}}catch(e){}
+  try{const u=JSON.parse(localStorage.getItem(CLE_UI)||'null');if(u){UI.pivot=!!u.pivot;if(ZOOMS.includes(u.zoom))UI.zoom=u.zoom;UI.vueServeur=u.vueServeur||null;UI.autoPlacer=u.autoPlacer!==false;UI.pivotAuto=u.pivotAuto!==false;UI.ecran=!!u.ecran;UI.attenteRepliee=!!u.attenteRepliee;UI.avisAuto=u.avisAuto!==false;if(u.theme==='clair'||u.theme==='sombre')UI.theme=u.theme;}}catch(e){}
 }
 function sauverLocal(){if(store.db)return;try{localStorage.setItem(CLE,JSON.stringify({config:S.config,prochain:S.prochain,visites:S.visites,attente:S.attente,repas:S.repas,sale:S.sale,decalage}));}catch(e){}}
-function sauverUI(){try{localStorage.setItem(CLE_UI,JSON.stringify({pivot:UI.pivot,zoom:UI.zoom,vueServeur:UI.vueServeur,autoPlacer:UI.autoPlacer,pivotAuto:UI.pivotAuto,ecran:UI.ecran,attenteRepliee:UI.attenteRepliee,avisAuto:UI.avisAuto}));}catch(e){}}
+function sauverUI(){try{localStorage.setItem(CLE_UI,JSON.stringify({pivot:UI.pivot,zoom:UI.zoom,vueServeur:UI.vueServeur,autoPlacer:UI.autoPlacer,pivotAuto:UI.pivotAuto,ecran:UI.ecran,attenteRepliee:UI.attenteRepliee,avisAuto:UI.avisAuto,theme:UI.theme}));}catch(e){}}
+// Thème de cet appareil : « Automatique » suit le réglage clair ou sombre de l'appareil ; « Clair » et « Sombre » l'imposent.
+// En automatique, on rend l'attribut posé par la page hôte (page Claude), s'il y en avait un.
+const themeHote=document.documentElement.getAttribute('data-theme');
+function appliquerTheme(){
+  const t=UI.theme==='clair'?'light':UI.theme==='sombre'?'dark':themeHote;
+  if(t)document.documentElement.setAttribute('data-theme',t);else document.documentElement.removeAttribute('data-theme');
+}
 const files={};
 function ecrire(cle,fn){const p=(files[cle]||Promise.resolve()).then(()=>essayer(fn));files[cle]=p;return p;}
 async function essayer(fn){
@@ -767,6 +774,7 @@ const ACTIONS={
   'zoom-moins':()=>changerZoom(-1),'zoom-plus':()=>changerZoom(1),'zoom-ajuster':()=>{UI.zoom=1;sauverUI();appliquerZoom();},
   pivot:()=>{UI.pivot=!UI.pivot;UI.pivotAuto=false;sauverUI();},
   'plein-plan':()=>pleinPlan(),
+  theme:el=>{UI.theme=el.dataset.t;sauverUI();appliquerTheme();},
   installer:async()=>{if(!invitationInstall)return;invitationInstall.prompt();try{await invitationInstall.userChoice;}catch(e){}invitationInstall=null;}
 };
 // Zoom par paliers réguliers, qui garde sous le curseur (ou au centre du cadre) le même point du plan.
@@ -1477,7 +1485,9 @@ function carteTablette(){
     :dansClaude()?'<p class="aide">Pour l\'installer, ouvrez le lien GitHub de la démo dans le navigateur de la tablette.</p>'
     :estIOS()?'<p class="aide">Sur iPad, dans Safari : touchez le bouton Partager, puis « Sur l\'écran d\'accueil ».</p>'
     :'<p class="aide">Dans le menu du navigateur, choisissez « Installer l\'application » ou « Ajouter à l\'écran d\'accueil ».</p>';
+  const th=(t,l)=>`<button class="${UI.theme===t?'on':''}" aria-pressed="${UI.theme===t}" data-action="theme" data-t="${t}">${l}</button>`;
   return `<section class="carte"><div class="tete"><h2>Cette tablette</h2></div>${installation}
+  <div class="tour">Thème <div class="seg" role="group" aria-label="Thème de l'affichage">${th('auto','Automatique')}${th('clair','Clair')}${th('sombre','Sombre')}</div></div>
   ${'wakeLock' in navigator?`<label class="bascule"><input type="checkbox" id="ecran" ${UI.ecran?'checked':''}>Garder l'écran allumé pendant le service</label>`:''}
   <label class="bascule"><input type="checkbox" id="pivot-auto" ${UI.pivotAuto!==false?'checked':''}>Tourner le plan selon l'orientation de la tablette</label>
   <p class="aide">Glissez le plan avec un doigt, pincez avec deux doigts pour zoomer. Touchez deux fois un endroit vide du plan pour l'afficher en grand écran, et de même pour revenir.</p></section>`;
@@ -1489,6 +1499,7 @@ window.addEventListener('storage',e=>{if(e.key===CLE_INSCR)importerInscriptionsD
 
 // ---------- Démarrage ----------
 chargerLocal();
+appliquerTheme();
 chargerVeloce();
 if(!large.matches&&UI.zoom===1&&innerWidth<700)UI.zoom=2;
 ST=stats();rendre();
