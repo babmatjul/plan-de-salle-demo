@@ -229,10 +229,12 @@ input[type=text],input[type=password],input[type=url]{font:400 15px var(--f-text
   .cadre{flex:1;min-height:0;max-height:none;touch-action:none} /* tablette en paysage : glisser et pincer gérés par la page */
   html,body{overscroll-behavior:none}
 }
-/* Tablette en portrait : les cartes se rangent sur deux colonnes sous le plan. */
+/* Tablette en portrait : le plan d'abord, puis les cartes sur deux colonnes (une carte seule sur sa ligne prend toute la largeur). */
 @media (min-width:700px) and (max-width:999px){
+  .corps{grid-template-areas:"plan" "haut" "bas"}
   #haut,#bas{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}
-  .cadre{max-height:62vh}
+  #haut>.carte:last-child:nth-child(odd),#bas>.carte:last-child:nth-child(odd){grid-column:1/-1}
+  .cadre{max-height:58vh}
 }
 @media (max-width:520px){
   .tailles{grid-template-columns:repeat(4,minmax(0,1fr))}
