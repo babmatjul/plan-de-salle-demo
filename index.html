@@ -290,6 +290,14 @@ input[type=text],input[type=password],input[type=url]{font:400 15px var(--f-text
   .legende{margin-left:0}
   .tuile b{font-size:22px}
 }
+/* Grand écran : le plan seul sur tout l'écran (double toucher sur un endroit vide du plan, ou bouton « Grand écran »).
+   Le doigt y déplace toujours le plan : la page n'a plus rien à faire défiler. */
+body.plein-plan{overflow:hidden}
+body.plein-plan .zone-plan{position:fixed;inset:0;z-index:15;background:var(--bg);
+  padding:max(8px,env(safe-area-inset-top,0px)) max(8px,env(safe-area-inset-right,0px)) max(8px,env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px))}
+body.plein-plan .cadre{flex:1;min-height:0;max-height:none;touch-action:none}
+body.plein-plan .astuce{display:none}
+@media (max-width:699px){body.plein-plan .legende{display:none}} /* téléphone : toute la hauteur pour le plan */
 </style>
 <style>[hidden]{display:none!important}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}img{max-width:100%}</style>
 </head>
@@ -314,7 +322,8 @@ input[type=text],input[type=password],input[type=url]{font:400 15px var(--f-text
         <button data-action="zoom-plus" aria-label="Zoomer">+</button>
         <button data-action="zoom-ajuster">Ajuster</button>
         <button data-action="pivot" id="b-pivot" aria-pressed="false">Pivoter le plan</button>
-        <span class="astuce">Maintenez le clic pour déplacer le plan · Ctrl + molette pour zoomer</span>
+        <button data-action="plein-plan" id="b-plein" aria-pressed="false">Grand écran</button>
+        <span class="astuce">Maintenez le clic pour déplacer le plan · Ctrl + molette pour zoomer · Double-clic pour le grand écran</span>
         <div class="legende" aria-hidden="true">
           <span><i class="lg-libre"></i>Libre</span><span><i class="lg-occ"></i>Occupée, minutes restantes</span>
           <span><i class="lg-add"></i>Addition demandée</span><span><i class="lg-long"></i>Plus long que prévu</span>
@@ -757,6 +766,7 @@ const ACTIONS={
   origine:()=>{['s1','s2','s3'].forEach((id,i)=>{if(!infoServeur(id))S.config.serveurs.splice(i,0,{id,nom:'Serveur '+(i+1),actif:true});});S.config.affectation=sectionsOrigine();sauverConfigBientot();},
   'zoom-moins':()=>changerZoom(-1),'zoom-plus':()=>changerZoom(1),'zoom-ajuster':()=>{UI.zoom=1;sauverUI();appliquerZoom();},
   pivot:()=>{UI.pivot=!UI.pivot;UI.pivotAuto=false;sauverUI();},
+  'plein-plan':()=>pleinPlan(),
   installer:async()=>{if(!invitationInstall)return;invitationInstall.prompt();try{await invitationInstall.userChoice;}catch(e){}invitationInstall=null;}
 };
 // Zoom par paliers réguliers, qui garde sous le curseur (ou au centre du cadre) le même point du plan.
@@ -1355,13 +1365,13 @@ document.addEventListener('focusout',e=>{const c=e.target.closest&&e.target.clos
 // Déplacer le plan en maintenant le clic (souris, stylet) ou au doigt, et le pincer pour zoomer.
 // Sur tablette en paysage, la page gère elle-même le doigt ; sur téléphone, le défilement natif garde la main
 // (la page doit rester défilable), et seul le pincement est géré ici.
-let glisse=null,bloquerClic=false,dernierZoomMolette=0,pince=null;
+let glisse=null,bloquerClic=false,dernierZoomMolette=0,pince=null,dernierPince=0;
 const doigts=new Map();
 const gestesManuels=()=>getComputedStyle(cadre).touchAction==='none';
 cadre.addEventListener('pointerdown',e=>{
   if(e.pointerType==='touch'){
     doigts.set(e.pointerId,{x:e.clientX,y:e.clientY});
-    if(doigts.size===2){const [a,b]=[...doigts.values()];pince={d:Math.hypot(a.x-b.x,a.y-b.y)||1};glisse=null;cadre.classList.remove('glisse');return;}
+    if(doigts.size===2){const [a,b]=[...doigts.values()];pince={d:Math.hypot(a.x-b.x,a.y-b.y)||1};dernierPince=Date.now();glisse=null;cadre.classList.remove('glisse');return;}
     if(!gestesManuels())return;
   }else if(e.button!==0)return;
   glisse={x:e.clientX,y:e.clientY,l:cadre.scrollLeft,t:cadre.scrollTop,actif:false,id:e.pointerId};
@@ -1371,6 +1381,7 @@ cadre.addEventListener('pointermove',e=>{
     doigts.set(e.pointerId,{x:e.clientX,y:e.clientY});
     if(pince&&doigts.size===2){
       const [a,b]=[...doigts.values()];const d=Math.hypot(a.x-b.x,a.y-b.y);const r=d/pince.d;
+      dernierPince=Date.now();
       if(r>1.2||r<0.83){changerZoom(r>1?1:-1,(a.x+b.x)/2,(a.y+b.y)/2);pince.d=d;}
       e.preventDefault();return;
     }
@@ -1401,6 +1412,41 @@ cadre.addEventListener('wheel',e=>{
   changerZoom(e.deltaY<0?1:-1,e.clientX,e.clientY);
 },{passive:false});
 if(window.ResizeObserver)new ResizeObserver(()=>{appliquerZoom();orienterPlan();}).observe(cadre);
+
+// ---------- Grand écran : le plan seul, sur tout l'écran ----------
+// Deux touchers rapides (ou un double-clic) sur un endroit vide du plan l'ouvrent et le referment ; le bouton
+// « Grand écran » et Échap aussi. Sur une table, le toucher garde son rôle (choisir, asseoir) : pas de bascule.
+// Un glissement ou un pincement ne produit pas de « click », donc ne compte pas comme toucher.
+let toucherPrec=null,pleinNavigateur=false;
+const ecranEntier=()=>document.fullscreenElement||document.webkitFullscreenElement||null;
+function pleinPlan(oui){
+  oui=oui??!document.body.classList.contains('plein-plan');
+  toucherPrec=null;
+  document.body.classList.toggle('plein-plan',oui);
+  const b=$('#b-plein');b.setAttribute('aria-pressed',String(oui));b.textContent=oui?'Quitter le grand écran':'Grand écran';
+  // Cache aussi la barre du navigateur quand c'est permis (l'application installée est déjà en plein écran).
+  try{
+    const el=document.documentElement,entrer=el.requestFullscreen||el.webkitRequestFullscreen,sortir=document.exitFullscreen||document.webkitExitFullscreen;
+    const r=oui?(!ecranEntier()&&entrer&&entrer.call(el)):(ecranEntier()&&sortir&&sortir.call(document));
+    if(r&&r.catch)r.catch(()=>{});
+  }catch(e){}
+  if(oui)toast(matchMedia('(pointer:coarse)').matches?'Touchez deux fois un endroit vide du plan pour revenir':'Double-cliquez sur le plan ou appuyez sur Échap pour revenir');
+}
+cadre.addEventListener('click',e=>{
+  if(e.target.closest('#plan .tb')){toucherPrec=null;return;}
+  const t=Date.now();
+  if(toucherPrec&&t-toucherPrec.t<400&&Math.hypot(e.clientX-toucherPrec.x,e.clientY-toucherPrec.y)<40&&t-dernierPince>600){pleinPlan();return;}
+  toucherPrec={t,x:e.clientX,y:e.clientY};
+});
+// Sortie du plein écran par le navigateur (Échap, geste du système) : le plan revient à sa place.
+const finEcranEntier=()=>{
+  const plein=document.body.classList.contains('plein-plan');
+  if(!ecranEntier()&&plein&&pleinNavigateur)pleinPlan(false);
+  pleinNavigateur=!!ecranEntier()&&document.body.classList.contains('plein-plan');
+};
+document.addEventListener('fullscreenchange',finEcranEntier);
+document.addEventListener('webkitfullscreenchange',finEcranEntier);
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.body.classList.contains('plein-plan')&&$('#qr-plein').hidden)pleinPlan(false);});
 
 // ---------- Tablette : orientation du plan, écran allumé, installation ----------
 // En paysage, le plan (plus haut que large) est tourné d'un quart de tour quand il y gagne de la place.
@@ -1434,7 +1480,7 @@ function carteTablette(){
   return `<section class="carte"><div class="tete"><h2>Cette tablette</h2></div>${installation}
   ${'wakeLock' in navigator?`<label class="bascule"><input type="checkbox" id="ecran" ${UI.ecran?'checked':''}>Garder l'écran allumé pendant le service</label>`:''}
   <label class="bascule"><input type="checkbox" id="pivot-auto" ${UI.pivotAuto!==false?'checked':''}>Tourner le plan selon l'orientation de la tablette</label>
-  <p class="aide">Glissez le plan avec un doigt, pincez avec deux doigts pour zoomer.</p></section>`;
+  <p class="aide">Glissez le plan avec un doigt, pincez avec deux doigts pour zoomer. Touchez deux fois un endroit vide du plan pour l'afficher en grand écran, et de même pour revenir.</p></section>`;
 }
 
 // Code QR plein écran : Échap le ferme. Une inscription faite sur cet appareil (démonstration) arrive aussitôt.
