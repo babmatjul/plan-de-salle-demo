@@ -1,0 +1,1609 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="description" content="Plan de salle interactif : attribution des tables par rotation des serveurs et prévision des tables libres.">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1d3a2a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Plan de salle">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="apple-touch-icon" href="icone-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icone-192.png">
+<title>Plan de salle Beauport</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap">
+<style>
+/* Mise en page : bandeau vert en haut ; plan à gauche, panneau à droite (tablette, ordinateur) ;
+   sur téléphone tout s'empile : panneau du haut, plan, puis le reste. */
+:root{
+  /* Couleurs de la déco du plan de Beauport (vert foncé, olive, beige) et jaune d'œuf pour la sélection.
+     Les couleurs de serveurs suivent une palette vérifiée pour le daltonisme. */
+  --bg:#eef1ea; --surface:#ffffff; --surface-2:#e4eadf; --fg:#18231c; --muted:#58675c; --line:#d2dacc;
+  --vert:#1f4a33; --vert-texte:#ffffff; --jaune:#f3b61f; --jaune-texte:#2a1f00; --blanc-oeuf:#fbfaf5;
+  --bande:#1d3a2a; --bande-texte:#f4f7f1; --bande-doux:#b7cabb; --bande-ligne:rgb(255 255 255 / .16); --bande-chip:rgb(255 255 255 / .07);
+  --ombre:0 1px 2px rgb(24 45 30 / .06),0 14px 30px -20px rgb(24 45 30 / .4);
+  --focus:#2f6fd6; --warn:#b45309; --danger:#b91c1c; --ok:#4cc27a;
+  --s1:#1baf7a; --s2:#eb6834; --s3:#2a78d6; --s4:#e87ba4; --s5:#6250d6;
+  --on-s1:#0b1a12; --on-s2:#1f0d05; --on-s3:#ffffff; --on-s4:#2a0d18; --on-s5:#ffffff;
+  --fond-filtre:none; --fond-opacite:.55;
+  --qr-fond:#ffffff; /* un code QR se lit sur fond blanc, quel que soit le thème */
+  --f-texte:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-titre:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-marque:"Bricolage Grotesque","Barlow",system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e1511; --surface:#16201a; --surface-2:#1f2b23; --fg:#e7efe8; --muted:#9db0a2; --line:#2b3a30;
+  --vert:#4aa874; --vert-texte:#0e1511; --jaune:#f5c542; --jaune-texte:#241a00;
+  --bande:#132a1d; --bande-texte:#eef5ef; --bande-doux:#9fb8a6; --bande-ligne:rgb(255 255 255 / .12); --bande-chip:rgb(255 255 255 / .05);
+  --ombre:0 1px 2px rgb(0 0 0 / .35);
+  --focus:#60a5fa; --warn:#fbbf24; --danger:#f87171; --ok:#4ade80;
+  --s1:#199e70; --s2:#d95926; --s3:#3987e5; --s4:#d55181; --s5:#9085e9;
+  --on-s1:#0e1511; --on-s2:#0e1511; --on-s3:#0e1511; --on-s4:#0e1511; --on-s5:#0e1511;
+  --fond-filtre:invert(1); --fond-opacite:.36; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1511; --surface:#16201a; --surface-2:#1f2b23; --fg:#e7efe8; --muted:#9db0a2; --line:#2b3a30;
+  --vert:#4aa874; --vert-texte:#0e1511; --jaune:#f5c542; --jaune-texte:#241a00;
+  --bande:#132a1d; --bande-texte:#eef5ef; --bande-doux:#9fb8a6; --bande-ligne:rgb(255 255 255 / .12); --bande-chip:rgb(255 255 255 / .05);
+  --ombre:0 1px 2px rgb(0 0 0 / .35);
+  --focus:#60a5fa; --warn:#fbbf24; --danger:#f87171; --ok:#4ade80;
+  --s1:#199e70; --s2:#d95926; --s3:#3987e5; --s4:#d55181; --s5:#9085e9;
+  --on-s1:#0e1511; --on-s2:#0e1511; --on-s3:#0e1511; --on-s4:#0e1511; --on-s5:#0e1511;
+  --fond-filtre:invert(1); --fond-opacite:.36; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:400 15px/1.45 var(--f-texte);-webkit-font-smoothing:antialiased}
+.s1{--c:var(--s1);--on-c:var(--on-s1)} .s2{--c:var(--s2);--on-c:var(--on-s2)} .s3{--c:var(--s3);--on-c:var(--on-s3)} .s4{--c:var(--s4);--on-c:var(--on-s4)} .s5{--c:var(--s5);--on-c:var(--on-s5)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.app{display:flex;flex-direction:column;gap:12px;min-height:100%;padding-block:12px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.barre{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;background:var(--bande);color:var(--bande-texte);border-radius:16px;padding:12px 14px 12px 16px;box-shadow:var(--ombre)}
+.marque{display:flex;align-items:center;gap:12px;margin-right:auto;min-width:0}
+.titres{display:flex;flex-direction:column;gap:4px;min-width:0}
+.marque h1{font:700 26px/1 var(--f-marque);letter-spacing:-.015em;margin:0;color:var(--bande-texte);text-wrap:balance}
+.marque span{color:var(--bande-doux);font-size:13px}
+.oeuf{position:relative;flex:none;width:40px;height:33px;background:var(--blanc-oeuf);border-radius:58% 42% 52% 48% / 55% 60% 40% 45%;transform:rotate(-8deg)}
+.oeuf::after{content:"";position:absolute;width:15px;height:15px;left:12px;top:8px;border-radius:50%;background:var(--jaune);box-shadow:inset -2px -2px 0 rgb(0 0 0 / .1)}
+.chiffres{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-flex;align-items:baseline;gap:5px;padding:5px 11px;border:1px solid var(--bande-ligne);border-radius:999px;background:var(--bande-chip);font-size:13px;color:var(--bande-doux);white-space:nowrap}
+.chip b{font:600 18px/1 var(--f-titre);color:var(--bande-texte);font-variant-numeric:tabular-nums}
+.chip i{width:8px;height:8px;border-radius:50%;background:var(--bande-doux);display:inline-block;align-self:center}
+.chip.direct i{background:var(--ok)} .chip.lent i,.chip.erreur i{background:var(--warn)}
+.chip.alerte{background:var(--jaune);border-color:var(--jaune);color:var(--jaune-texte);font-weight:500}
+.chip.alerte b{color:var(--jaune-texte)}
+.chip.alerte .point{background:var(--jaune-texte);align-self:center}
+.actions-barre{display:flex;flex-wrap:wrap;gap:8px}
+button{font:500 15px/1.2 var(--f-texte);color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 13px;cursor:pointer;min-height:40px;transition:background-color .15s,border-color .15s,transform .1s}
+button:hover{border-color:var(--muted)}
+button:active{transform:translateY(1px)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+button.prim{background:var(--vert);color:var(--vert-texte);border-color:var(--vert);font-weight:600}
+button.prim:hover{background:color-mix(in srgb,var(--vert) 88%,var(--fg))}
+button.on{background:var(--jaune);color:var(--jaune-texte);border-color:var(--jaune);font-weight:600}
+button.lien{border:0;background:none;padding:4px 2px;min-height:0;color:var(--muted);text-decoration:underline;text-underline-offset:3px;font-size:14px}
+button.danger{color:var(--danger);border-color:color-mix(in srgb,var(--danger) 45%,var(--line))}
+button[disabled]{opacity:.55;cursor:default}
+.barre button,.barre select{background:transparent;color:var(--bande-texte);border:1px solid var(--bande-ligne)}
+.barre button:hover,.barre select:hover{border-color:var(--bande-doux)}
+.barre button.on{background:var(--jaune);color:var(--jaune-texte);border-color:var(--jaune)}
+.barre select{font:500 15px var(--f-texte);border-radius:10px;padding:8px 10px;min-height:40px;max-width:190px}
+.barre select option{color:var(--fg);background:var(--surface)}
+@media (prefers-reduced-motion:reduce){button{transition:none}}
+.corps{display:grid;gap:12px;grid-template-columns:minmax(0,1fr);grid-template-areas:"haut" "plan" "attente" "bas"}
+/* Liste d'attente : colonne de gauche sur grand écran, carte sous le plan ailleurs. */
+.attente{grid-area:attente;display:flex;flex-direction:column;gap:12px;min-width:0}
+.attente:empty{display:none}
+.qr-mini{display:flex;flex-direction:column;align-items:center;gap:4px;width:100%;padding:12px;border-radius:14px;background:var(--surface-2);border:1px solid var(--line);font-size:14px}
+.qr-mini small{color:var(--muted);font-weight:400}
+.qr{display:block;background:var(--qr-fond);border-radius:10px;padding:6px;width:148px;height:148px}
+.qr svg{display:block;width:100%;height:100%}
+.vide-qr{display:flex;align-items:center;justify-content:center;color:#3d4a41;font-size:13px;text-align:center}
+.liste-attente li{flex-direction:column;align-items:stretch;gap:6px}
+.rang-mini{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.puces{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.puce{font-size:12px;font-weight:500;padding:2px 8px;border-radius:999px;background:var(--surface-2);color:var(--fg)}
+.puce.ok{background:color-mix(in srgb,var(--ok) 25%,var(--surface))}
+.deplier{display:flex;flex-direction:column;align-items:center;gap:2px;width:100%;padding:12px 4px;font-size:12px}
+.deplier b{font:700 26px/1 var(--f-marque)}
+.qr-icone{width:100%;padding:6px;background:var(--qr-fond);border-radius:12px;min-height:0}
+.qr-icone svg{display:block;width:100%;height:auto}
+.qr-plein{position:fixed;inset:0;z-index:40;background:var(--bande);color:var(--bande-texte);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;text-align:center;cursor:pointer;
+  padding:max(24px,env(safe-area-inset-top,0px)) max(24px,env(safe-area-inset-right,0px)) max(24px,env(safe-area-inset-bottom,0px)) max(24px,env(safe-area-inset-left,0px))}
+.qr-plein h2{font:700 clamp(28px,5vw,48px)/1.1 var(--f-marque);margin:0}
+.qr-plein .qr{width:min(60vmin,520px);height:min(60vmin,520px);padding:clamp(10px,2vmin,20px);border-radius:24px}
+.qr-texte{max-width:34em;font-size:clamp(16px,2.4vmin,22px);margin:0}
+.qr-url{font-size:14px;color:var(--bande-doux);margin:0;word-break:break-all}
+.qr-plein .qr-fermer{background:transparent;color:var(--bande-texte);border-color:var(--bande-ligne)}
+.cote{display:contents}
+#haut{grid-area:haut;display:flex;flex-direction:column;gap:12px;min-width:0}
+#bas{grid-area:bas;display:flex;flex-direction:column;gap:12px;min-width:0}
+#haut:empty,#bas:empty{display:none}
+.zone-plan{grid-area:plan;display:flex;flex-direction:column;gap:8px;min-width:0}
+.outils{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.outils button{min-height:34px;padding:5px 11px;font-size:14px}
+.zoomval{min-width:50px;text-align:center;font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums}
+.astuce{font-size:13px;color:var(--muted)}
+.legende{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:13px;color:var(--muted);margin-left:auto}
+.legende span{display:inline-flex;align-items:center;gap:5px}
+.legende i{display:inline-block;width:14px;height:11px;border-radius:3px}
+.lg-libre{background:color-mix(in srgb,var(--s3) 15%,var(--surface));border:2px solid var(--s3)}
+.lg-occ{background:var(--s3)}
+.lg-add{background:var(--s3);outline:2px solid var(--warn);outline-offset:1px}
+.lg-long{background:var(--s3);outline:2px solid var(--danger);outline-offset:1px}
+.lg-pret{border:2px dashed var(--jaune)}
+.lg-ferme{background:var(--surface-2);border:2px dashed var(--line)}
+.cadre{display:flex;background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:auto;max-height:76vh;overscroll-behavior:contain;box-shadow:var(--ombre)}
+.cadre svg{display:block;flex:none;margin:auto}
+#plan{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.cadre{touch-action:pan-x pan-y} /* téléphone : défilement natif ; le pincement est géré par la page */
+button,select,input{touch-action:manipulation}
+.cadre.peut-glisser{cursor:grab}
+.cadre.glisse,.cadre.glisse #plan .tb{cursor:grabbing}
+.carte{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:15px;display:flex;flex-direction:column;gap:10px;min-width:0;box-shadow:var(--ombre)}
+.carte h2{margin:0;font:600 15px/1.2 var(--f-titre);letter-spacing:.09em;text-transform:uppercase;color:var(--vert)}
+.tete{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.prop{border:2px solid var(--c,var(--vert));background:color-mix(in srgb,var(--c,var(--jaune)) 7%,var(--surface))}
+.grand{font:700 30px/1.05 var(--f-marque);letter-spacing:-.015em;margin:0;text-wrap:balance}
+.meta{display:flex;flex-wrap:wrap;gap:4px 12px;color:var(--muted);font-size:14px}
+.pastille{display:inline-flex;align-items:center;gap:6px;font-weight:500;color:var(--fg)}
+.pastille i{width:12px;height:12px;border-radius:50%;background:var(--c);flex:none}
+.note{font-size:14px;padding:8px 10px;border-radius:10px;background:var(--surface-2)}
+.note.alerte{background:color-mix(in srgb,var(--warn) 16%,var(--surface))}
+.aide{margin:0;font-size:13px;color:var(--muted)}
+.tailles{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:6px}
+.tailles button{padding:0;min-height:46px;font:600 22px/1 var(--f-titre)}
+.vitesses{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.vitesses button{padding:0;min-height:40px;font:600 18px/1 var(--f-titre)}
+.pas{display:flex;align-items:center;gap:4px}
+.pas button{min-height:34px;width:34px;padding:0;font-size:18px}
+.pas output{min-width:64px;text-align:center;font-variant-numeric:tabular-nums}
+.pas output b{font:700 20px var(--f-titre)}
+.tour{display:flex;align-items:center;gap:6px;font-size:14px;color:var(--muted);flex-wrap:wrap}
+.champ{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
+.champ small{font-size:12px}
+input[type=text],input[type=password],input[type=url]{font:400 15px var(--f-texte);color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-height:40px;width:100%}
+.rang{display:flex;flex-wrap:wrap;gap:8px}
+.rang>button{flex:1 1 auto}
+.etapes{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:6px}
+.etapes button{font-size:14px;min-height:44px;padding:6px 8px}
+.liste{list-style:none;margin:0;padding:0}
+.liste li{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line)}
+.liste li:first-child{border-top:0;padding-top:2px}
+.liste li.pret{background:color-mix(in srgb,var(--jaune) 18%,var(--surface));border-radius:12px;padding:10px;border-top-color:transparent;margin-top:4px}
+.liste li.pret+li{border-top-color:transparent}
+.liste .q{flex:1;min-width:0}
+.liste .q b{display:block;font-weight:600}
+.liste .q small{color:var(--muted);font-size:13px}
+.liste li.pret .q small{color:var(--fg)}
+.liste button{min-height:34px;padding:5px 11px;font-size:14px}
+.point{width:9px;height:9px;border-radius:50%;background:var(--jaune);display:inline-block;flex:none;animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{50%{transform:scale(1.45);opacity:.55}}
+.etat-sim{display:inline-flex;align-items:center;gap:6px;font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums}
+.eta{font:700 20px var(--f-titre);font-variant-numeric:tabular-nums;white-space:nowrap}
+.badge{font-style:normal;font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;background:var(--jaune);color:var(--jaune-texte);margin-left:6px;vertical-align:1px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{border:0;border-radius:0;min-height:32px;padding:5px 10px;font-size:13px}
+.vide{color:var(--muted);font-size:14px;margin:0}
+.pinceau{width:40px;height:40px;padding:0;flex:none;background:color-mix(in srgb,var(--c) 18%,var(--surface));border:2px solid var(--c)}
+.pinceau.on{background:var(--c);border-color:var(--c);box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--c)}
+.bascule{display:flex;align-items:center;gap:8px;font-size:14px}
+.bascule input{width:18px;height:18px;flex:none;accent-color:var(--c,var(--vert))}
+.tableau{overflow-x:auto}
+.tableau table{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+.tableau th{font-weight:500;color:var(--muted);text-align:right;padding:4px 6px;border-bottom:1px solid var(--line);font-size:13px}
+.tableau td{text-align:right;padding:6px;border-bottom:1px solid var(--line)}
+.tableau th:first-child,.tableau td:first-child{text-align:left;padding-left:0}
+.tableau td b{font-weight:600}
+.tuiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.tuile{background:var(--surface-2);border-radius:12px;padding:10px 12px;min-width:0}
+.tuile small{display:block;color:var(--muted);font-size:13px}
+.tuile b{display:block;font:700 26px/1.15 var(--f-marque);letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.graph{position:relative}
+.graph svg{display:block;width:100%;height:auto;overflow:visible}
+.graph .grille{stroke:var(--line);stroke-width:1}
+.graph .axe{stroke:var(--muted);stroke-width:1}
+.graph text{font:500 11px var(--f-texte);fill:var(--muted)}
+.graph .bar{fill:var(--vert)}
+.graph .bar.survol{fill:var(--jaune)}
+.graph .cible{fill:transparent;cursor:default;outline:none}
+.bulle{position:absolute;transform:translate(-50%,-100%);background:var(--bande);color:var(--bande-texte);font-size:13px;padding:6px 9px;border-radius:8px;white-space:nowrap;pointer-events:none;z-index:2}
+.parts li{flex-wrap:wrap}
+.piste{height:10px;border-radius:5px;background:var(--surface-2);margin-top:6px;overflow:hidden}
+.rempli{height:100%;border-radius:5px;background:var(--c)}
+.top{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:4px;font-variant-numeric:tabular-nums}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--bande);color:var(--bande-texte);padding:10px 16px;border-radius:10px;font-weight:500;max-width:min(92vw,520px);z-index:20;box-shadow:0 6px 24px rgb(0 0 0 / .2)}
+#plan text{text-anchor:middle;dominant-baseline:central;pointer-events:none}
+#plan .fond{opacity:var(--fond-opacite);filter:var(--fond-filtre);pointer-events:none}
+#plan .repere{font:600 20px var(--f-titre);letter-spacing:.08em;text-transform:uppercase;fill:var(--muted)}
+#plan .tb{cursor:pointer;outline:none;transition:opacity .2s}
+#plan .tb .f{fill:color-mix(in srgb,var(--c) 15%,var(--surface));stroke:var(--c);stroke-width:2.5}
+#plan .tb:hover .f{stroke-width:4.5}
+#plan .tb:focus-visible .f{stroke:var(--focus);stroke-width:5}
+#plan .tb .num{font:600 19px var(--f-titre);fill:color-mix(in srgb,var(--c) 70%,var(--fg))}
+#plan .tb.occ .f{fill:var(--c)}
+#plan .tb.occ .num{font-size:16px;fill:color-mix(in srgb,var(--on-c) 82%,var(--c))}
+#plan .tb.occ .min{font:700 24px var(--f-titre);fill:var(--on-c)}
+#plan .tb.occ.active .f{stroke:var(--fg);stroke-width:4}
+#plan .tb.ferme .f{fill:var(--surface-2);stroke:var(--line);stroke-dasharray:6 4}
+#plan .tb.ferme .num{fill:var(--muted)}
+#plan .tb.autre{opacity:.28}
+#plan .anneau{fill:none;stroke-width:5;pointer-events:none}
+#plan .anneau.addition{stroke:var(--warn)}
+#plan .anneau.long{stroke:var(--danger)}
+#plan .pret{fill:none;stroke:var(--jaune);stroke-width:4;stroke-dasharray:7 5;pointer-events:none}
+#plan .tb.sale .f{fill:color-mix(in srgb,var(--muted) 16%,var(--surface));stroke:var(--muted);stroke-dasharray:4 3}
+#plan .tb.sale .num{fill:var(--fg);font-size:17px}
+#plan .tb.sale .lbl{font:600 12px var(--f-texte);fill:var(--muted)}
+#plan .tb.sale.long .f{stroke:var(--warn);stroke-width:3.5;stroke-dasharray:none}
+.lg-sale{background:color-mix(in srgb,var(--muted) 16%,var(--surface));border:2px dashed var(--muted)}
+.etat-veloce{display:flex;align-items:center;gap:8px;font-size:14px}
+.etat-veloce i{width:10px;height:10px;border-radius:50%;background:var(--muted);flex:none}
+.etat-veloce.ok i{background:var(--ok)}
+.etat-veloce.erreur i{background:var(--danger)}
+#plan .sel{fill:none;stroke:var(--fg);stroke-width:4;stroke-dasharray:10 6;pointer-events:none;animation:marche .9s linear infinite}
+@keyframes marche{to{stroke-dashoffset:-16}}
+@media (prefers-reduced-motion:reduce){#plan .sel,.point{animation:none}#plan .tb{transition:none}}
+@media (min-width:1000px){
+  .app{height:100%;min-height:0}
+  .corps{flex:1;min-height:0;grid-template-columns:270px minmax(0,1fr) 360px;grid-template-areas:"attente plan cote"}
+  .corps.attente-repliee{grid-template-columns:78px minmax(0,1fr) 360px}
+  .corps.sans-attente{grid-template-columns:minmax(0,1fr) 384px;grid-template-areas:"plan cote"}
+  .attente{overflow:auto;min-height:0}
+  .cote{display:flex;flex-direction:column;gap:12px;grid-area:cote;overflow:auto;min-height:0;padding-right:2px}
+  .zone-plan{min-height:0}
+  .cadre{flex:1;min-height:0;max-height:none;touch-action:none} /* tablette en paysage : glisser et pincer gérés par la page */
+  html,body{overscroll-behavior:none}
+}
+/* Tablette en paysage (écran peu haut) : bandeau et barre d'outils compacts pour laisser la hauteur au plan. */
+@media (min-width:1000px) and (max-height:900px){
+  .app{gap:8px;padding-block:8px}
+  .barre{padding:7px 12px;gap:6px 10px}
+  .marque{gap:9px}
+  .marque span{display:none}
+  .marque h1{font-size:22px}
+  .oeuf{width:30px;height:25px}
+  .oeuf::after{width:11px;height:11px;left:9px;top:6px}
+  .chiffres{gap:4px}
+  .chip{padding:3px 8px;font-size:12px}
+  .chip b{font-size:15px}
+  .barre button,.barre select{min-height:34px;padding:5px 10px;font-size:14px}
+  .zone-plan{gap:6px}
+  .outils{gap:4px}
+  .legende{font-size:12px;gap:2px 9px}
+}
+/* Écran tactile : l'astuce pour la souris n'a pas lieu d'être (les gestes sont expliqués dans « Sections »). */
+@media (pointer:coarse){.astuce{display:none}}
+/* Tablette en portrait : le plan d'abord, puis les cartes sur deux colonnes (une carte seule sur sa ligne prend toute la largeur). */
+@media (min-width:700px) and (max-width:999px){
+  .corps{grid-template-areas:"plan" "attente" "haut" "bas"}
+  #haut,#bas{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}
+  #haut>.carte:last-child:nth-child(odd),#bas>.carte:last-child:nth-child(odd){grid-column:1/-1}
+  .cadre{max-height:58vh}
+}
+@media (max-width:520px){
+  .tailles{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .marque h1{font-size:23px}
+  .legende{margin-left:0}
+  .tuile b{font-size:22px}
+}
+/* Service : le plan reste visible, les commandes défilent séparément. */
+[hidden]{display:none!important}
+button,.barre button,.barre select,.outils button,.liste button,.pas button{min-height:44px}
+button.lien{min-height:44px;padding:8px 4px}
+.tailles{grid-template-columns:repeat(4,minmax(0,1fr))}.tailles button{min-height:48px}
+.barre{border-radius:14px;gap:10px}.marque h1{font-size:23px}.marque span{font-size:12px}
+.chiffres{order:3;width:100%;gap:6px}.chip{padding:4px 9px}
+.actions-barre{margin-left:auto}.actions-barre select{max-width:155px}
+.corps{grid-template-columns:minmax(0,1fr);grid-template-areas:"plan" "cote";align-items:start}
+.cote{display:flex;grid-area:cote;flex-direction:column;gap:12px;min-width:0}
+#haut,#bas{display:flex;flex-direction:column;gap:12px;align-items:stretch}
+.pas button{width:44px}
+.attente{display:flex;gap:12px}.attente:empty{display:none}
+.onglets{display:flex;gap:6px;padding:6px;background:var(--surface-2);border-radius:13px;position:sticky;top:0;z-index:3}
+.onglets button{flex:1;font-size:14px;border-color:transparent;background:transparent}
+.onglets button.on{background:var(--surface);color:var(--fg);border-color:var(--line);box-shadow:var(--ombre)}
+.outils{gap:6px}.astuce{display:none}.legende{width:100%;margin:0;gap:6px 12px;font-size:12px}
+.cadre{max-height:48dvh;min-height:240px;background:var(--bg)}
+.carte{padding:16px;gap:12px}.carte h2{letter-spacing:.04em;font-size:16px}
+.carte .prim{min-height:50px}.grand{font-size:30px}
+.qr-mini{flex-direction:row;justify-content:space-between;text-align:left;min-height:48px;padding:10px 12px}
+.qr-mini small{font-size:12px}.raccourcis{display:flex;flex-wrap:wrap;gap:8px}.raccourcis button{flex:1}
+.etat-vide{padding:28px 20px;text-align:center}.etat-vide p{margin:0;color:var(--muted)}
+#plan .fond-simple{fill:var(--surface);stroke:var(--line);stroke-width:3}
+#plan .repere{font-size:22px;letter-spacing:.03em;fill:var(--muted)}
+#plan .tb .f{fill:color-mix(in srgb,var(--ok) 12%,var(--surface));stroke:var(--vert);stroke-width:3}
+#plan .tb .num{font:700 29px var(--f-titre);fill:var(--fg)}
+#plan .tb.occ .f{fill:color-mix(in srgb,var(--muted) 22%,var(--surface));stroke:var(--muted)}
+#plan .tb.occ .num{font-size:26px;fill:var(--fg)}
+#plan .tb.occ .min{font:600 12px var(--f-texte);fill:var(--fg)}
+#plan .tb.sale .f{fill:color-mix(in srgb,var(--warn) 20%,var(--surface));stroke:var(--warn);stroke-dasharray:4 3}
+#plan .tb.sale .num{font-size:26px;fill:var(--fg)}
+#plan .tb.sale .lbl{font-size:12px;fill:var(--fg)}
+#plan .serveur-point{fill:var(--c);stroke:var(--surface);stroke-width:2;pointer-events:none}
+#plan .tb.edition .f{fill:color-mix(in srgb,var(--c) 18%,var(--surface));stroke:var(--c)}
+#plan .tb.ferme .f{fill:var(--surface-2);stroke:var(--line);stroke-dasharray:6 4}
+#plan .tb.ferme .num{fill:var(--muted)}
+#plan .tb.active .f{stroke:var(--focus);stroke-width:5}
+#plan .sel{stroke:var(--focus);animation:none;stroke-dasharray:none;stroke-width:5}
+.lg-libre{background:color-mix(in srgb,var(--ok) 12%,var(--surface));border:2px solid var(--vert)}
+.lg-occ{background:color-mix(in srgb,var(--muted) 22%,var(--surface));border:2px solid var(--muted)}
+.lg-sale{background:color-mix(in srgb,var(--warn) 20%,var(--surface));border:2px dashed var(--warn)}
+.lg-add,.lg-long{background:color-mix(in srgb,var(--muted) 22%,var(--surface))}
+@media (min-width:1000px){
+  .app{height:100dvh;min-height:0;padding-block:10px;gap:10px}
+  .corps,.corps.attente-repliee,.corps.sans-attente{flex:1;min-height:0;grid-template-columns:minmax(0,1fr) 350px;grid-template-areas:"plan cote";align-items:stretch}
+  .cote{overflow:auto;min-height:0;padding:0 3px 12px 0}.attente{overflow:visible;flex-shrink:0}
+  .zone-plan{min-height:0}.cadre{flex:1;min-height:0;max-height:none;touch-action:none}
+}
+@media (min-width:1400px){.corps,.corps.attente-repliee,.corps.sans-attente{grid-template-columns:minmax(0,1fr) 390px}}
+@media (max-width:999px){
+  .zone-plan{position:sticky;top:0;z-index:4;background:var(--bg);padding-bottom:6px}
+  .cadre{height:40dvh;min-height:190px}.legende{font-size:11px;gap:4px 9px}
+  .onglets{position:static}.marque{width:100%}.actions-barre{margin:0;width:100%}.actions-barre button{flex:1}
+}
+@media (max-width:520px){
+  .app{padding:8px;gap:8px}.barre{padding:10px}.marque span,.oeuf{display:none}
+  .chip{font-size:11px;padding:3px 6px}.chip b{font-size:15px}.actions-barre{gap:4px}.barre button,.barre select{font-size:13px;padding:7px}
+  .outils{gap:4px}.outils button{font-size:12px;padding:6px 9px}.zoomval{min-width:40px}
+}
+</style>
+<style>[hidden]{display:none!important}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}img{max-width:100%}</style>
+</head>
+<body>
+<div class="app">
+  <header class="barre">
+    <div class="marque"><span class="oeuf" aria-hidden="true"></span><div class="titres"><h1>Plan de salle</h1><span>Beauport · 80 tables · 160 places</span></div></div>
+    <div class="chiffres" id="chiffres"></div>
+    <div class="actions-barre">
+      <select id="vue" aria-label="Vue de cet appareil"></select>
+      <button id="b-service" data-action="service" aria-pressed="true">Service</button>
+      <button id="b-bilan" data-action="bilan" aria-pressed="false">Bilan</button>
+      <button id="b-reglages" data-action="reglages" aria-pressed="false">Réglages</button>
+    </div>
+  </header>
+  <main class="corps">
+    <section class="zone-plan" aria-label="Plan de la salle">
+      <div class="outils">
+        <button data-action="zoom-moins" aria-label="Dézoomer">−</button>
+        <span class="zoomval" id="zoom-val" aria-live="polite">100 %</span>
+        <button data-action="zoom-plus" aria-label="Zoomer">+</button>
+        <button data-action="zoom-ajuster">Ajuster</button>
+        <button data-action="pivot" id="b-pivot" aria-pressed="false">Pivoter le plan</button>
+        <span class="astuce">Maintenez le clic pour déplacer le plan · Ctrl + molette pour zoomer</span>
+        <div class="legende" aria-hidden="true">
+          <span><i class="lg-libre"></i>Libre</span><span><i class="lg-occ"></i>Occupée</span>
+          <span><i class="lg-add"></i>Addition demandée</span><span><i class="lg-long"></i>Plus long que prévu</span>
+          <span><i class="lg-sale"></i>À débarrasser</span><span><i class="lg-pret"></i>Gardée pour la liste d'attente</span><span><i class="lg-ferme"></i>Section fermée</span>
+        </div>
+      </div>
+      <div class="cadre" id="cadre"><svg id="plan" viewBox="0 0 1290 1460" role="group" aria-label="Tables de la salle"></svg></div>
+    </section>
+    <div class="cote">
+      <nav class="onglets" id="onglets-service" aria-label="Commandes de service"><button id="onglet-accueil" data-action="onglet-accueil" aria-pressed="true">Arrivées et attente</button><button id="onglet-table" data-action="onglet-table" aria-pressed="false">Table sélectionnée</button></nav>
+      <div id="haut"></div>
+      <aside class="attente" id="attente" aria-label="Liste d'attente"></aside>
+      <div id="bas"></div>
+    </div>
+  </main>
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
+<!-- Code QR en plein écran, à montrer aux clients ; on le ferme en touchant n'importe où. -->
+<div class="qr-plein" id="qr-plein" data-action="qr-fermer" role="dialog" aria-modal="true" aria-labelledby="qr-titre" hidden>
+  <h2 id="qr-titre">Liste d'attente</h2>
+  <div class="qr" id="qr-grand"></div>
+  <p class="qr-texte">Scannez ce code avec l'appareil photo de votre téléphone, puis inscrivez-vous.<br>Nous vous préviendrons par texto ou par courriel quand votre table sera bientôt prête.</p>
+  <p class="qr-url" id="qr-url"></p>
+  <button class="qr-fermer" data-action="qr-fermer">Fermer</button>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+
+<script>
+// ---------- Le plan : 80 tables de 24 × 30 po (2 places), relevées dans le plan d'aménagement A-300 ----------
+// Chaque rangée : orientation ('h' = table posée verticalement sur le plan, 'v' = posée à l'horizontale),
+// coordonnée commune, puis la position de chaque table le long de la rangée (unités du plan, 1 pi = 24).
+const RANGEES=[["v",1231,[81,165,213,297,345,429,477,586,634,718,766,850,898,982,1030,1114,1162,1246,1294,1378]],
+["h",300,[790,879,927,1013,1061]],
+["v",847,[648,696,780,828,912,960,1044,1092,1176,1224]],
+["v",1018,[650,698,782,830,914,962,1046,1094,1178,1226]],
+["h",692,[430,478,574,622,670]],
+["h",865,[118,166,262,310,358,430,478,574,622,670]],
+["h",1025,[118,166,262,310,358,430,478,574,622,670]],
+["h",1202,[371,419,503,551]],
+["v",277,[1298,1400]],
+["v",67,[1208,1256,1352,1400]]];
+const W=1290,H=1460,NB=80;
+const TABLES={},LIGNES=[];
+RANGEES.forEach(([o,k,pos],r)=>{const L=[];pos.forEach((p,i)=>{const n=Object.keys(TABLES).length+1;const t=o==='h'?{x:p,y:k,w:48,h:60}:{x:k,y:p,w:60,h:48};TABLES[n]=Object.assign({n,o,r,i},t);L.push(TABLES[n]);});LIGNES.push(L);});
+const REPERES=[['Vestibule',456,1350],['Hôtesse',652,1300],['Station serveur',1010,560],['Station serveur',150,762],['Station serveur',1105,1420],['Toilettes',183,445],['Cuisine',560,40]];
+const ecart=(a,b)=>a.o==='h'?Math.abs(b.x-a.x):Math.abs(b.y-a.y);
+const touche=(a,b)=>ecart(a,b)<=52;     // tables collées
+const joignable=(a,b)=>ecart(a,b)<=100; // on peut les rapprocher (allée de 2 pi au plus)
+
+// Sections d'origine : une par station serveur du plan.
+function sectionsOrigine(){const a={};for(let n=1;n<=NB;n++)a[n]=n<=25?'s1':(n<=45||(n>=71&&n<=76))?'s2':'s3';return a;}
+const COULEURS=['s1','s2','s3','s4','s5'];
+const CONFIG_DEFAUT={serveurs:[{id:'s1',nom:'Serveur 1',actif:true},{id:'s2',nom:'Serveur 2',actif:true},{id:'s3',nom:'Serveur 3',actif:true}],affectation:sectionsOrigine(),mode:'tour'};
+const ETAPES=[['assis','Assis'],['commande','Commande prise'],['plats','Plats servis'],['dessert','Dessert, café'],['addition','Addition demandée']];
+const ORDRE_ETAPE=Object.fromEntries(ETAPES.map(([k],i)=>[k,i]));
+const LIB_ETAPE=Object.fromEntries(ETAPES);
+const SUIVANTE={assis:'commande',commande:'plats',plats:'dessert',dessert:'addition'};
+const BOUTON_SUIVANT={assis:'Commande prise',commande:'Plats servis',plats:'Dessert, café',dessert:'Addition demandée',addition:'Addition payée'};
+const PART={assis:1,commande:.85,plats:.6,dessert:.25}; // part du repas qui reste au début de chaque étape
+const BASE={a:45,b:55,c:65,d:75};                      // durées de départ (min), corrigées par l'historique
+const CAT=p=>p<=2?'a':p<=4?'b':p<=6?'c':'d';
+const CAT_LIB={a:'1 ou 2 pers.',b:'3 ou 4 pers.',c:'5 ou 6 pers.',d:'7 pers. et plus'};
+// Simulation : le restaurant simulé mange un peu autrement que les durées de départ, pour qu'on voie l'apprentissage.
+const VRAIE={a:40,b:58,c:70,d:85};
+const AFFLUENCE={7:.3,8:.55,9:.8,10:.85,11:.65,12:.5,13:.28}; // groupes par minute, de 7 h à 14 h (pointe du brunch vers 10 h)
+const NOMS=['Tremblay','Gagnon','Roy','Côté','Bouchard','Gauthier','Morin','Lavoie','Fortin','Gagné','Ouellet','Pelletier','Bélanger','Lévesque','Bergeron','Leblanc','Paquette','Girard','Simard','Boucher','Caron','Beaulieu','Cloutier','Dubé','Poirier'];
+const VITESSES=[0,10,30,60,120];
+const ZOOMS=[1,1.25,1.5,1.75,2,2.5,3,4]; // multiples de la taille « Ajuster »
+
+// ---------- État ----------
+const clone=o=>JSON.parse(JSON.stringify(o));
+const S={config:clone(CONFIG_DEFAUT),prochain:null,visites:{},attente:{},repas:[],sale:{}}; // sale : tables payées, à débarrasser
+let decalage=0;                                  // avance de l'horloge simulée sur l'heure réelle (ms)
+const maintenant=()=>Date.now()+decalage;
+const UI={n:2,nom:'',prop:null,manuel:null,manuelAttente:null,selVisite:null,panneau:'normal',vueServeur:null,pinceau:'s1',zoom:1,pivot:false,
+  onglet:'accueil',sync:'connexion',confirmFin:0,confirmHisto:0,chargement:false,configSale:false,vitesse:0,autoPlacer:true,simT:null,pretsConnus:null,selSale:null,pivotAuto:true,ecran:false,attenteRepliee:false,avisAuto:true,contactVisible:null,inscriptionsFinies:new Set()};
+let ST=null,PRETS={};
+// Connexion à Veloce, par le connecteur (dossier veloce/ du projet). Adresse et clé gardées sur cet appareil.
+const CLE_VELOCE='plan-salle-codex-veloce-v1',PLACES=160;
+const VEL={url:'',cle:'',seq:0,etat:'off',message:'',sante:null,durees:null,affluence:null,conf:null,bilan:null,infosA:0,recents:[],saisieUrl:'',saisieCle:'',enCours:false};
+const argent=n=>Number(n||0).toLocaleString('fr-CA',{style:'currency',currency:'CAD'});
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const hm=t=>{const d=new Date(t);return d.getHours()+' h '+String(d.getMinutes()).padStart(2,'0');};
+const delaiLisible=n=>n<=0?'Sous peu':n<5?'moins de 5 min':`${Math.floor(n/5)*5}–${Math.floor(n/5)*5+5} min`;
+const minutesDepuis=t=>Math.max(0,Math.round((maintenant()-t)/6e4));
+const somme=(a,f)=>a.reduce((x,y)=>x+f(y),0);
+const pluriel=(n,s,p)=>n+' '+(n>1?(p||s+'s'):s);
+
+function normaliserConfig(d){
+  const c=clone(CONFIG_DEFAUT);
+  if(!d||typeof d!=='object')return c;
+  if(Array.isArray(d.serveurs)){
+    const s=d.serveurs.filter(x=>x&&COULEURS.includes(x.id)).slice(0,5).map(x=>({id:x.id,nom:String(x.nom||'Serveur').slice(0,40),actif:x.actif!==false}));
+    if(s.length)c.serveurs=s;
+  }
+  const ids=c.serveurs.map(s=>s.id);
+  const src=d.affectation&&typeof d.affectation==='object'?d.affectation:{};
+  for(let n=1;n<=NB;n++){const v=src[n];c.affectation[n]=ids.includes(v)?v:ids.includes(c.affectation[n])?c.affectation[n]:ids[0];}
+  c.mode=d.mode==='charge'?'charge':'tour';
+  return c;
+}
+const visiteValide=v=>v&&Array.isArray(v.tables)&&v.tables.length&&v.tables.every(n=>TABLES[n])&&Number.isFinite(v.pers)&&v.pers>0&&Number.isFinite(v.arrivee);
+const serveurDe=n=>S.config.affectation[n]||S.config.serveurs[0].id;
+const infoServeur=id=>S.config.serveurs.find(s=>s.id===id);
+const nomServeur=id=>infoServeur(id)?.nom||'Serveur retiré';
+const actif=id=>!!infoServeur(id)?.actif;
+const actifs=()=>S.config.serveurs.filter(s=>s.actif).map(s=>s.id);
+const vueServeur=()=>UI.vueServeur&&infoServeur(UI.vueServeur)?UI.vueServeur:null;
+function occupation(){const m={};for(const [id,v] of Object.entries(S.visites))v.tables.forEach(t=>m[t]=id);return m;}
+// Tables indisponibles pour un nouveau groupe : occupées, ou payées mais pas encore débarrassées.
+function occupees(){const m=occupation();for(const n of Object.keys(S.sale))if(!m[n])m[n]='sale';return m;}
+function prochainActuel(){const a=actifs();return a.includes(S.prochain)?S.prochain:(a[0]||null);}
+function suivant(s){const a=actifs();if(!a.length)return null;const i=a.indexOf(s);return a[(i+1)%a.length];}
+function chargeParServeur(){const r={};S.config.serveurs.forEach(s=>r[s.id]={tables:0,couverts:0});for(const v of Object.values(S.visites)){if(!r[v.serveur])continue;r[v.serveur].tables+=v.tables.length;r[v.serveur].couverts+=v.pers;}return r;}
+function tablesParServeur(){const r={};for(let n=1;n<=NB;n++){const s=serveurDe(n);r[s]=(r[s]||0)+1;}return r;}
+function libTables(ts){const s=[...ts].sort((a,b)=>a-b);if(s.length===1)return 'Table '+s[0];const suite=s.every((n,i)=>i===0||n===s[i-1]+1);return 'Tables '+(suite?s[0]+'–'+s[s.length-1]:s.join(', '));}
+function etiquette(ts){const s=[...ts].sort((a,b)=>a-b);if(s.length===1)return String(s[0]);const suite=s.every((n,i)=>i===0||n===s[i-1]+1);return suite?s[0]+'–'+s[s.length-1]:s[0]+'+';}
+
+// ---------- Prédiction : durée d'un repas et temps restant ----------
+function stats(){
+  const r={};
+  for(const k in BASE){
+    const tous=S.repas.filter(x=>x&&Number.isFinite(x.p)&&Number.isFinite(x.d)&&CAT(x.p)===k);
+    const ds=tous.slice(-40).map(x=>x.d).sort((a,b)=>a-b);
+    let med=null;if(ds.length){const m=Math.floor(ds.length/2);med=ds.length%2?ds[m]:Math.round((ds[m-1]+ds[m])/2);}
+    const w=ds.length/(ds.length+5); // plus il y a de repas observés, plus ils comptent
+    const b=baseDuree(k);
+    r[k]={n:ds.length,tot:tous.length,med,base:b,est:med==null?b:Math.round((1-w)*b+w*med)};
+  }
+  return r;
+}
+// Durée de départ : celle apprise par Veloce (ajustée à l'heure et au jour) dès qu'elle repose sur assez de repas.
+const dureesVeloce=()=>!!(VEL.durees&&VEL.durees.maintenant&&Object.values(VEL.durees.maintenant).some(x=>x&&x.exemples>=5));
+function baseDuree(k){const v=VEL.durees&&VEL.durees.maintenant&&VEL.durees.maintenant[k];return v&&v.exemples>=5?v.minutes:BASE[k];}
+function reste(v){
+  const est=ST[CAT(v.pers)].est;const depuis=(maintenant()-(v.depuis||v.arrivee))/6e4;
+  if(v.etape==='addition')return Math.max(1,Math.round(8-depuis));
+  return Math.max(3,Math.round(est*(PART[v.etape]??1)-depuis));
+}
+const enRetard=v=>(maintenant()-v.arrivee)/6e4>ST[CAT(v.pers)].est+10;
+
+// ---------- Attribution : fenêtres de tables voisines dans une rangée ----------
+const cacheF={};
+function fenetres(k){
+  if(cacheF[k])return cacheF[k];
+  const res=[];
+  LIGNES.forEach((L,li)=>{for(let i=0;i+k<=L.length;i++){const w=L.slice(i,i+k);let ok=true,coupes=0;
+    for(let j=1;j<k;j++){if(!joignable(w[j-1],w[j])){ok=false;break;}if(!touche(w[j-1],w[j]))coupes++;}
+    if(ok)res.push({li,i,t:w.map(x=>x.n),coupes});}});
+  return cacheF[k]=res;
+}
+function candidats(n,occ){
+  const k=Math.ceil(n/2);const libre=t=>!occ[t]&&actif(serveurDe(t));const res=[];
+  for(const f of fenetres(k)){
+    if(!f.t.every(libre))continue;
+    const L=LIGNES[f.li];const servs=new Set(f.t.map(serveurDe));
+    let c=f.coupes*10+(k*2-n)*3;                       // tables à rapprocher, places perdues
+    const a=L[f.i-1],b=L[f.i+k];                       // ne pas couper un bloc de tables collées
+    if(a&&touche(a,L[f.i])&&libre(a.n))c+=4;
+    if(b&&touche(L[f.i+k-1],b)&&libre(b.n))c+=4;
+    if(servs.size>1)c+=40;
+    res.push({tables:f.t,serveur:servs.size===1?[...servs][0]:serveurDe(f.t[0]),cout:c,cheval:servs.size>1,coupes:f.coupes});
+  }
+  return res;
+}
+function ordreServeurs(){
+  const a=actifs();if(!a.length)return [];
+  const p=prochainActuel();const i=Math.max(0,a.indexOf(p));let ord=a.slice(i).concat(a.slice(0,i));
+  if(S.config.mode==='charge'){const ch=chargeParServeur();ord=ord.map((id,j)=>({id,j,c:ch[id].couverts})).sort((x,y)=>x.c-y.c||x.j-y.j).map(x=>x.id);}
+  return ord;
+}
+function proposer(n,occ){
+  const cands=candidats(n,occ||occupees());const liste=[];const sautes=[];
+  for(const s of ordreServeurs()){
+    const siens=cands.filter(c=>!c.cheval&&c.serveur===s).sort((x,y)=>x.cout-y.cout||x.tables[0]-y.tables[0]);
+    if(!siens.length){if(!liste.length)sautes.push(s);continue;}
+    const premier=!liste.length;
+    siens.slice(0,4).forEach((c,j)=>liste.push(Object.assign({},c,{sautes:premier&&j===0?sautes.slice():[]})));
+  }
+  if(!liste.length)cands.filter(c=>c.cheval).sort((x,y)=>x.cout-y.cout).slice(0,3).forEach(c=>liste.push(Object.assign({},c,{sautes:[]})));
+  return liste;
+}
+function prevision(n){
+  const occ=occupees();const k=Math.ceil(n/2);let best=null;
+  for(const f of fenetres(k)){
+    if(!f.t.every(t=>actif(serveurDe(t))))continue;
+    let m=0;for(const t of f.t){const v=occ[t];if(v==='sale')m=Math.max(m,3);else if(v)m=Math.max(m,reste(S.visites[v]));}
+    const c=m*10+f.coupes;if(!best||c<best.c)best={c,min:m,tables:f.t};
+  }
+  return best;
+}
+// Liste d'attente : dans l'ordre d'arrivée, chaque groupe se voit garder les premières tables qui lui conviennent.
+function attenteTriee(){return Object.entries(S.attente).filter(([,x])=>x&&Number.isFinite(x.pers)&&x.pers>0&&Number.isFinite(x.ajout)).sort((a,b)=>a[1].ajout-b[1].ajout);}
+function calculerPrets(){const occ=occupees();const r={};for(const [id,a] of attenteTriee()){const l=proposer(a.pers,occ);if(l.length){r[id]=l[0];l[0].tables.forEach(t=>occ[t]='attente:'+id);}}return r;}
+function occSansReserves(saufId){const occ=occupees();for(const [id,c] of Object.entries(PRETS))if(id!==saufId)c.tables.forEach(t=>{if(!occ[t])occ[t]='attente:'+id;});return occ;}
+
+// ---------- Enregistrement : base partagée si disponible, sinon cet appareil ----------
+const CLE='plan-salle-codex-v1',CLE_UI='plan-salle-codex-ui-v1';
+function chargerLocal(){
+  try{const d=JSON.parse(localStorage.getItem(CLE)||'null');if(d){S.config=normaliserConfig(d.config);S.prochain=d.prochain||null;S.visites=Object.fromEntries(Object.entries(d.visites||{}).filter(([,v])=>visiteValide(v)));S.attente=d.attente&&typeof d.attente==='object'?d.attente:{};S.repas=Array.isArray(d.repas)?d.repas:[];S.sale=d.sale&&typeof d.sale==='object'?d.sale:{};decalage=Number.isFinite(d.decalage)?d.decalage:0;}}catch(e){}
+  try{const u=JSON.parse(localStorage.getItem(CLE_UI)||'null');if(u){UI.pivot=!!u.pivot;if(ZOOMS.includes(u.zoom))UI.zoom=u.zoom;UI.vueServeur=u.vueServeur||null;UI.autoPlacer=u.autoPlacer!==false;UI.pivotAuto=u.pivotAuto!==false;UI.ecran=!!u.ecran;UI.attenteRepliee=!!u.attenteRepliee;UI.avisAuto=u.avisAuto!==false;}}catch(e){}
+}
+function sauverLocal(){if(store.db||salleConnectee())return;try{localStorage.setItem(CLE,JSON.stringify({config:S.config,prochain:S.prochain,visites:S.visites,attente:S.attente,repas:S.repas,sale:S.sale,decalage}));}catch(e){}}
+function sauverUI(){try{localStorage.setItem(CLE_UI,JSON.stringify({pivot:UI.pivot,zoom:UI.zoom,vueServeur:UI.vueServeur,autoPlacer:UI.autoPlacer,pivotAuto:UI.pivotAuto,ecran:UI.ecran,attenteRepliee:UI.attenteRepliee,avisAuto:UI.avisAuto}));}catch(e){}}
+const files={};
+function ecrire(cle,fn){const p=(files[cle]||Promise.resolve()).then(()=>essayer(fn));files[cle]=p;return p;}
+async function essayer(fn){
+  try{await fn();}
+  catch(e){
+    if(e&&e.code==='unavailable'){await new Promise(r=>setTimeout(r,300+Math.random()*700));try{await fn();return;}catch(e2){e=e2;}}
+    signalerErreur(e);
+  }
+}
+// Une personne qui n'a pas le droit d'écrire dans le plan partagé garde une démo complète sur son appareil.
+const abonnements=[];
+function passerEnLocal(){
+  abonnements.splice(0).forEach(u=>{try{u();}catch(e){}});
+  store.db=null;UI.sync='local';
+  S.config=normaliserConfig(S.config);S.visites=clone(S.visites);S.attente=clone(S.attente);S.repas=clone(S.repas);S.sale=clone(S.sale);
+  sauverLocal();
+}
+function signalerErreur(e){
+  const c=e&&e.code;
+  if((c==='invalid_argument'||c==='not_granted')&&store.db){passerEnLocal();toast('Vous ne pouvez pas modifier le plan partagé : la démo continue sur cet appareil. Refaites votre dernière action.');}
+  else if(c==='invalid_argument'||c==='not_granted')toast('Cette action n\'a pas pu être enregistrée.');
+  else if(c==='quota_exceeded')toast('La base du plan est pleine. Faites une fin de service pour libérer de la place.');
+  else toast('Enregistrement impossible. Vérifiez la connexion puis réessayez.');
+  rendre();
+}
+function apresLocal(){sauverLocal();rendre();}
+const store={
+  db:null,
+  setVisite(id,d){if(this.db)return ecrire('v/'+id,()=>this.db.doc('visites/'+id).set(d));S.visites[id]=d;apresLocal();},
+  majVisite(id,p){if(this.db)return ecrire('v/'+id,()=>this.db.doc('visites/'+id).update(p));if(S.visites[id])Object.assign(S.visites[id],p);apresLocal();},
+  delVisite(id){if(this.db)return ecrire('v/'+id,()=>this.db.doc('visites/'+id).delete());delete S.visites[id];apresLocal();},
+  setAttente(id,d){if(this.db)return ecrire('a/'+id,()=>this.db.doc('attente/'+id).set(d));S.attente[id]=d;apresLocal();},
+  delAttente(id){if(this.db)return ecrire('a/'+id,()=>this.db.doc('attente/'+id).delete());delete S.attente[id];apresLocal();},
+  setConfig(c){if(this.db)return ecrire('config',()=>this.db.doc('salle/config').set(c));S.config=c;apresLocal();},
+  setRotation(p){if(this.db)return ecrire('rotation',()=>this.db.doc('salle/rotation').set({prochain:p}));S.prochain=p;apresLocal();},
+  ajouterRepas(e){const repas=[...S.repas,e].slice(-400);if(this.db)return ecrire('historique',()=>this.db.doc('salle/historique').set({repas}));S.repas=repas;apresLocal();},
+  setSale(o){if(this.db)return ecrire('sale',()=>this.db.doc('salle/debarrasser').set({tables:o}));S.sale=o;apresLocal();},
+  viderRepas(){if(this.db)return ecrire('historique',()=>this.db.doc('salle/historique').set({repas:[]}));S.repas=[];apresLocal();}
+};
+const nouvelId=p=>p+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+
+// Le connecteur est la source commune des tablettes. Une révision périmée est refusée.
+let revisionSalle=-1,ecrituresSalle=0;
+const salleConnectee=()=>!!(VEL.url&&VEL.cle&&!dansClaude());
+function recevoirSalle(s){
+  if(s.revision<revisionSalle)return;
+  revisionSalle=s.revision;
+  Object.assign(S,{config:UI.configSale?S.config:normaliserConfig(s.config),prochain:s.prochain,visites:s.visites,attente:s.attente,repas:s.repas,sale:s.sale});
+  decalage=0;UI.vitesse=0;UI.sync='direct';rendre();
+}
+async function lireSalle(){
+  if(!salleConnectee()||ecrituresSalle||UI.configSale)return;
+  const url=VEL.url;
+  let s=await appelVeloce('/salle');
+  if(s.revision===0){
+    try{s=await appelVeloce('/salle',{methode:'POST',corps:{revision:0,operations:[{action:'setConfig',args:[clone(CONFIG_DEFAUT)]}]}});}
+    catch(e){if(e.statut!==409)throw e;s=await appelVeloce('/salle');}
+  }
+  if(VEL.url===url&&!ecrituresSalle&&!UI.configSale)recevoirSalle(s);
+}
+async function modifierSalle(operations){
+  if(revisionSalle<0)throw new Error('Le plan partagé doit être chargé avant de modifier la salle.');
+  const url=VEL.url,revision=revisionSalle;
+  ecrituresSalle++;
+  try{
+    const s=await appelVeloce('/salle',{methode:'POST',corps:{revision,operations}});
+    if(VEL.url===url)recevoirSalle(s);
+  }catch(e){
+    UI.sync='erreur';
+    if(e.statut===409&&VEL.url===url){UI.configSale=false;recevoirSalle(await appelVeloce('/salle'));}
+    throw e;
+  }finally{ecrituresSalle--;rendre();}
+}
+for(const action of ['setVisite','majVisite','delVisite','setAttente','delAttente','setConfig','setRotation','ajouterRepas','setSale','viderRepas']){
+  const locale=store[action];
+  store[action]=function(...args){return salleConnectee()?modifierSalle([{action,args}]):locale.apply(this,args);};
+}
+
+// ---------- Actions ----------
+function entreeRepas(v,t){return{p:v.pers,d:Math.round((t-v.arrivee)/6e4),a:v.arrivee,f:t,s:v.serveur,tb:v.tables.slice(),w:v.attendu||0};}
+async function asseoir(tables,n,serveur,o={}){
+  const now=maintenant();const avant=prochainActuel();const a=o.attenteId&&S.attente[o.attenteId];
+  if(salleConnectee()){
+    const operations=[{action:'setVisite',args:[nouvelId('v'),{tables:[...tables].sort((x,y)=>x-y),pers:n,serveur,arrivee:now,etape:'assis',depuis:now,nom:o.nom||'',attendu:a?Math.max(0,Math.round((now-a.ajout)/6e4)):0}]}];
+    if(o.attenteId)operations.push({action:'delAttente',args:[o.attenteId]});
+    if(o.auto||serveur===avant)operations.push({action:'setRotation',args:[suivant(serveur)]});
+    await modifierSalle(operations);await informerInscription(a,'assis');
+    toast(libTables(tables)+' · '+n+' pers. · '+nomServeur(serveur));return;
+  }
+  await store.setVisite(nouvelId('v'),{tables:[...tables].sort((x,y)=>x-y),pers:n,serveur,arrivee:now,etape:'assis',depuis:now,nom:o.nom||'',attendu:a?Math.max(0,Math.round((now-a.ajout)/6e4)):0});
+  if(o.attenteId){await store.delAttente(o.attenteId);informerInscription(a,'assis');}
+  if(o.auto||serveur===avant){const s=suivant(serveur);if(s&&s!==S.prochain)await store.setRotation(s);}
+  toast(libTables(tables)+' · '+n+' pers. · '+nomServeur(serveur));
+}
+// Addition payée : le repas entre dans l'historique et ses tables passent « à débarrasser ».
+async function payer(id,{t=maintenant(),source='manuel',facture=null,total=null}={}){
+  const v=S.visites[id];if(!v)return;const d=Math.round((t-v.arrivee)/6e4);
+  if(salleConnectee()){
+    const operations=[];
+    if(!v.exemple&&d>=5&&d<=300&&!(facture&&S.repas.some(r=>r&&r.fv===facture)))operations.push({action:'ajouterRepas',args:[Object.assign(entreeRepas(v,t),facture?{fv:facture}:{})]});
+    const sale={...S.sale};v.tables.forEach(n=>{sale[n]=Object.assign({depuis:t,source},facture?{facture}:{},total!=null?{total}:{});});
+    operations.push({action:'setSale',args:[sale]},{action:'delVisite',args:[id]});
+    await modifierSalle(operations);toast(libTables(v.tables)+' : à débarrasser');return;
+  }
+  if(!v.exemple&&d>=5&&d<=300&&!(facture&&S.repas.some(r=>r&&r.fv===facture)))await store.ajouterRepas(Object.assign(entreeRepas(v,t),facture?{fv:facture}:{}));
+  const sale={...S.sale};
+  v.tables.forEach(n=>{sale[n]=Object.assign({depuis:t,source},facture?{facture}:{},total!=null?{total}:{});});
+  await store.setSale(sale);await store.delVisite(id);
+  toast(libTables(v.tables)+' : à débarrasser');
+}
+async function debarrasser(n){const sale={...S.sale};delete sale[n];if(UI.selSale===n)UI.selSale=null;await store.setSale(sale);toast(`Table ${n} prête pour l'accueil`);}
+function faireProposition(n,nom,attenteId){
+  UI.panneau='normal';UI.onglet='accueil';
+  let liste=proposer(n,occSansReserves(attenteId));
+  const garde=attenteId&&PRETS[attenteId];
+  if(garde)liste=[Object.assign({},garde,{sautes:[]}),...liste.filter(c=>c.tables.join()!==garde.tables.join())];
+  UI.prop={n,nom,attenteId,liste,idx:0,prev:liste.length?null:prevision(n)};UI.manuel=null;UI.selVisite=null;
+}
+async function chargerExemple(){
+  UI.chargement=true;rendre();
+  const occ=occupees();const now=maintenant();const tailles=[2,2,4,1,2,3,4,2,2,6,2,4,5,2,3,2,4,2,1,2,2,4,3,2,2,6,2,4,2,2,3,2];const lot=[];
+  for(const n of tailles){
+    const cs=candidats(n,occ).filter(c=>!c.cheval).sort(()=>Math.random()-.5).sort((a,b)=>a.cout-b.cout);if(!cs.length)continue;
+    const c=cs[Math.floor(Math.random()*Math.min(6,cs.length))];c.tables.forEach(t=>occ[t]='x');
+    const est=ST[CAT(n)].est;const e=4+Math.random()*(est+6);const f=e/est;
+    const etape=f<.12?'assis':f<.35?'commande':f<.75?'plats':f<.92?'dessert':'addition';
+    const debut={assis:0,commande:.12,plats:.35,dessert:.75,addition:.92}[etape];
+    const arrivee=Math.round(now-e*6e4);const depuis=Math.min(now,Math.round(arrivee+debut*est*6e4+Math.random()*12e4));
+    lot.push([nouvelId('v'),{tables:c.tables,pers:n,serveur:c.serveur,arrivee,etape,depuis,nom:'',exemple:true}]);
+  }
+  for(const [id,d] of lot)await store.setVisite(id,d);
+  await store.setAttente(nouvelId('a'),{nom:'Exemple',pers:6,ajout:now-7*6e4});
+  UI.chargement=false;rendre();toast(lot.length+' groupes d\'exemple placés');
+}
+async function finDeService(){
+  UI.chargement=true;rendre();
+  try{
+    if(salleConnectee())await modifierSalle([...Object.keys(S.visites).map(id=>({action:'delVisite',args:[id]})),{action:'setSale',args:[{}]}]);
+    else{for(const id of Object.keys(S.visites))await store.delVisite(id);await store.setSale({});}
+  }finally{UI.chargement=false;}
+  UI.chargement=false;UI.confirmFin=0;UI.selVisite=null;rendre();toast('Toutes les tables sont libres');
+}
+let minuterieConfig=null,versionConfig=0,versionSauvee=0;
+function sauverConfigBientot(){versionConfig++;UI.configSale=true;clearTimeout(minuterieConfig);minuterieConfig=setTimeout(()=>enregistrerConfig().catch(e=>toast(e.message)),600);}
+async function enregistrerConfig(){
+  clearTimeout(minuterieConfig);
+  if(versionSauvee===versionConfig){UI.configSale=false;return;}
+  const v=versionConfig;await store.setConfig(clone(S.config));versionSauvee=v;
+  if(versionSauvee===versionConfig)UI.configSale=false; // une modification faite pendant l'envoi repartira au prochain délai
+}
+
+function toucherTable(n){
+  if(UI.panneau==='sections'){if(!infoServeur(UI.pinceau))return;S.config.affectation[n]=UI.pinceau;sauverConfigBientot();rendre();return;}
+  UI.panneau='normal';UI.onglet='table';
+  if(S.sale[n]){UI.selSale=n;UI.selVisite=null;UI.prop=null;UI.manuel=null;rendre();return;}
+  UI.selSale=null;
+  const occ=occupation();
+  if(occ[n]){UI.selVisite=occ[n];UI.prop=null;UI.manuel=null;rendre();return;}
+  if(vueServeur()){toast('C\'est l\'accueil qui attribue les tables : choisissez « Vue accueil » pour asseoir un groupe.');return;}
+  if(!actif(serveurDe(n))){toast('Section fermée : ouvrez-la dans « Sections ».');return;}
+  UI.selVisite=null;
+  if(!UI.manuel){UI.manuel=new Set();UI.manuelAttente=UI.prop?UI.prop.attenteId:null;if(UI.prop){UI.n=UI.prop.n;UI.nom=UI.prop.nom||UI.nom;}UI.prop=null;}
+  if(UI.manuel.has(n))UI.manuel.delete(n);else UI.manuel.add(n);
+  if(!UI.manuel.size)UI.manuel=null;
+  rendre();
+}
+
+// ---------- Simulation accélérée (toujours sur cet appareil) ----------
+function poisson(l){if(l<=0)return 0;let k=0,p=1;const L=Math.exp(-l);do{k++;p*=Math.random();}while(p>L);return k-1;}
+function tirerTaille(){const r=Math.random();return r<.1?1:r<.55?2:r<.67?3:r<.87?4:r<.92?5:r<.98?6:7+Math.floor(Math.random()*2);}
+function tirerDuree(n){return Math.round(VRAIE[CAT(n)]*(.75+Math.random()*.5));}
+function simAsseoir(c,n,nom,attenteId,t){
+  const a=attenteId&&S.attente[attenteId];
+  S.visites[nouvelId('v')]={tables:[...c.tables].sort((x,y)=>x-y),pers:n,serveur:c.serveur,arrivee:t,etape:'assis',depuis:t,nom:nom||'',duree:tirerDuree(n),attendu:a?Math.max(0,Math.round((t-a.ajout)/6e4)):0};
+  if(attenteId)delete S.attente[attenteId];
+  const s=suivant(c.serveur);if(s)S.prochain=s;
+}
+function etapeSimulation(t){
+  // 0. Le personnel débarrasse les tables payées, 2 à 6 minutes après le paiement.
+  for(const [n,s] of Object.entries(S.sale))if(s.source==='simulation'&&s.fin<=t)delete S.sale[n];
+  // 1. Les repas avancent ; ceux qui sont finis paient (historique) et laissent leurs tables à débarrasser.
+  for(const [id,v] of Object.entries(S.visites)){
+    if(!v.duree)v.duree=tirerDuree(v.pers);
+    const f=(t-v.arrivee)/6e4/v.duree;
+    if(f>=1){const d=Math.round((t-v.arrivee)/6e4);if(!v.exemple&&d>=5)S.repas=[...S.repas,entreeRepas(v,t)].slice(-400);v.tables.forEach(n=>{S.sale[n]={depuis:t,source:'simulation',fin:t+(2+Math.random()*4)*6e4};});delete S.visites[id];continue;}
+    const e=f>=.9?'addition':f>=.75?'dessert':f>=.35?'plats':f>=.1?'commande':'assis';
+    if(ORDRE_ETAPE[e]>(ORDRE_ETAPE[v.etape]??0)){v.etape=e;v.depuis=t;}
+  }
+  // 2. Après 25 minutes d'attente, un groupe simulé finit par repartir.
+  for(const [id,a] of attenteTriee())if(t-a.ajout>25*6e4)delete S.attente[id];
+  // 3. L'accueil place les groupes en attente dont la table est prête depuis une minute.
+  if(UI.autoPlacer){const prets=calculerPrets();for(const [id,c] of Object.entries(prets)){const a=S.attente[id];if(!a)continue;if(!a.pret){a.pret=t;continue;}if(t-a.pret>=6e4)simAsseoir(c,a.pers,a.nom,id,t);}}
+  // 4. De nouveaux groupes arrivent selon l'heure ; s'il y a déjà une file, ils s'y ajoutent.
+  // Avec Veloce branché, la simulation rejoue l'affluence réelle de ce jour de semaine.
+  const aff=VEL.affluence&&Object.keys(VEL.affluence.groupesParMinute||{}).length?VEL.affluence.groupesParMinute:AFFLUENCE;
+  const k=poisson(aff[new Date(t).getHours()]||0);
+  for(let i=0;i<k;i++){
+    const n=tirerTaille();const nom=NOMS[Math.floor(Math.random()*NOMS.length)];
+    if(!attenteTriee().length){const l=proposer(n);if(l.length){simAsseoir(l[0],n,nom,null,t);continue;}}
+    S.attente[nouvelId('a')]={nom,pers:n,ajout:t};
+  }
+}
+function preparerSimulation(){
+  if(salleConnectee()){UI.vitesse=0;toast('Débranchez le connecteur pour utiliser la simulation locale.');return;}
+  if(store.db){passerEnLocal();toast('La simulation tourne sur cet appareil seulement.');}
+  if(UI.simT==null||UI.simT>maintenant())UI.simT=maintenant();
+}
+let dernierTick=Date.now(),dernierRendu=Date.now(),derniereAttente=0;
+function tick(){
+  const now=Date.now();const dt=Math.min(5000,now-dernierTick);dernierTick=now;
+  // Toutes les 5 s : inscriptions de démonstration, estimations pour les clients, avis automatiques.
+  if(now-derniereAttente>=5000){derniereAttente=now;if(!VEL.url||!VEL.cle){importerInscriptionsDemo();publierEstimations();}verifierAvisAuto();}
+  if(UI.vitesse>0&&!store.db&&!salleConnectee()){
+    decalage+=dt*(UI.vitesse-1);
+    const t=maintenant();if(UI.simT==null||UI.simT>t)UI.simT=t;
+    let pas=0;while(UI.simT+6e4<=t&&pas<300){UI.simT+=6e4;ST=stats();etapeSimulation(UI.simT);pas++;}
+    sauverLocal();rendre();dernierRendu=now;
+  }else if(now-dernierRendu>=20000){rendre();dernierRendu=now;}
+}
+
+const ACTIONS={
+  service:async()=>{if(UI.configSale)await enregistrerConfig();UI.panneau='normal';},
+  reglages:async()=>{if(UI.configSale)await enregistrerConfig();UI.panneau=UI.panneau==='reglages'?'normal':'reglages';},
+  simulation:()=>{UI.panneau='simulation';},
+  'onglet-accueil':()=>{UI.onglet='accueil';},
+  'onglet-table':()=>{UI.onglet='table';},
+  taille:el=>{UI.n=+el.dataset.n;faireProposition(UI.n,UI.nom.trim(),null);},
+  moins:()=>{UI.n=Math.max(1,UI.n-1);if(UI.prop)faireProposition(UI.n,UI.prop.nom,UI.prop.attenteId);},
+  plus:()=>{UI.n=Math.min(20,UI.n+1);if(UI.prop)faireProposition(UI.n,UI.prop.nom,UI.prop.attenteId);},
+  proposer:()=>faireProposition(UI.n,UI.nom.trim(),null),
+  'attente-ajout':async()=>{await store.setAttente(nouvelId('a'),{nom:UI.nom.trim(),pers:UI.n,ajout:maintenant()});UI.nom='';toast('Ajouté à la liste d\'attente');},
+  'asseoir-prop':async()=>{const p=UI.prop;if(!p||!p.liste.length)return;const c=p.liste[p.idx];UI.prop=null;UI.nom='';await asseoir(c.tables,p.n,c.serveur,{auto:true,attenteId:p.attenteId,nom:p.nom});},
+  autre:()=>{if(UI.prop)UI.prop.idx=(UI.prop.idx+1)%UI.prop.liste.length;},
+  'annuler-prop':()=>{UI.prop=null;},
+  'prop-attente':async()=>{const p=UI.prop;UI.prop=null;UI.nom='';await store.setAttente(nouvelId('a'),{nom:p.nom||'',pers:p.n,ajout:maintenant()});toast('Ajouté à la liste d\'attente');},
+  'asseoir-manuel':async()=>{const ts=[...UI.manuel].sort((a,b)=>a-b);const att=UI.manuelAttente;const nom=UI.nom.trim();await asseoir(ts,UI.n,serveurDe(ts[0]),{attenteId:att,nom});UI.manuel=null;UI.manuelAttente=null;UI.nom='';UI.onglet='accueil';},
+  vider:()=>{UI.manuel=null;UI.manuelAttente=null;},
+  etape:async el=>{const id=UI.selVisite;if(id)await store.majVisite(id,{etape:el.dataset.e,depuis:maintenant()});},
+  'etape-suivante':async el=>{const id=el.dataset.v;const v=S.visites[id];if(!v)return;if(v.etape==='addition')return payer(id);await store.majVisite(id,{etape:SUIVANTE[v.etape]||'commande',depuis:maintenant()});},
+  payer:async()=>{const id=UI.selVisite;const n=S.visites[id]?.tables[0];await payer(id);UI.selVisite=null;if(n&&S.sale[n])UI.selSale=n;},
+  debarrasser:async el=>{await debarrasser(+el.dataset.n);},
+  'fermer-sale':()=>{UI.selSale=null;},
+  veloce:()=>{UI.panneau=UI.panneau==='veloce'?'normal':'veloce';UI.prop=null;UI.manuel=null;UI.selVisite=null;UI.selSale=null;},
+  'vel-connecter':async()=>{
+    const url=VEL.saisieUrl.trim(),cle=VEL.saisieCle.trim();
+    if(!/^https?:\/\/\S+$/.test(url)){toast('Indiquez l\'adresse du connecteur, par exemple https://plan-beauport.exemple.com');return;}
+    if(cle.length<8){toast('Indiquez la clé d\'accès du connecteur.');return;}
+    if(url!==VEL.url)VEL.seq=0;revisionSalle=-1;UI.configSale=false;VEL.url=url;VEL.cle=cle;VEL.etat='connexion';VEL.message='';sauverVeloce();
+    await sonderVeloce(true);if(VEL.etat==='ok')toast('Plan branché sur Veloce');
+  },
+  'vel-deconnecter':()=>{if(ecrituresSalle){toast('Enregistrement en cours. Réessayez dans un instant.');return;}VEL.url='';VEL.cle='';revisionSalle=-1;UI.sync='local';VEL.etat='off';VEL.message='';VEL.sante=VEL.durees=VEL.affluence=VEL.conf=VEL.bilan=null;Object.assign(S,{config:clone(CONFIG_DEFAUT),prochain:null,visites:{},attente:{},repas:[],sale:{}});chargerLocal();sauverVeloce();},
+  'vel-importer':async()=>{try{VEL.conf=await appelVeloce('/configuration');if(!VEL.conf.serveurs.length)toast('Veloce n\'a renvoyé aucun serveur actif.');}catch(e){toast(e.message);}},
+  'vel-annuler-conf':()=>{VEL.conf=null;},
+  'vel-appliquer':async()=>{
+    const c=VEL.conf;if(!c||!c.serveurs||!c.serveurs.length)return;const ids=c.serveurs.map(s=>s.id);const aff={};
+    for(let n=1;n<=NB;n++)aff[n]=ids.includes(c.affectation[n])?c.affectation[n]:ids[0];
+    const conf=normaliserConfig({serveurs:c.serveurs.map(s=>({id:s.id,nom:s.nom,actif:true})),affectation:aff,mode:S.config.mode});
+    S.config=conf;VEL.conf=null;await store.setConfig(conf);toast('Serveurs et sections de Veloce appliqués au plan');
+  },
+  'annuler-visite':async()=>{const id=UI.selVisite;UI.selVisite=null;await store.delVisite(id);toast('Place annulée');},
+  'fermer-sel':()=>{UI.selVisite=null;},
+  mode:async el=>{const c=clone(S.config);c.mode=el.dataset.m;S.config=c;await store.setConfig(c);},
+  tour:async el=>{await store.setRotation(el.dataset.s);},
+  'placer-attente':el=>{const a=S.attente[el.dataset.id];if(!a)return;UI.n=a.pers;faireProposition(a.pers,a.nom||'',el.dataset.id);},
+  'placer-pret':async el=>{const id=el.dataset.id;const c=PRETS[id],a=S.attente[id];if(!c||!a)return;await asseoir(c.tables,a.pers,c.serveur,{auto:true,attenteId:id,nom:a.nom});},
+  'retirer-attente':async el=>{const a=S.attente[el.dataset.id];await store.delAttente(el.dataset.id);informerInscription(a,'retire');},
+  prevenir:el=>{const id=el.dataset.id;const a=S.attente[id];if(!a)return;return envoyerAvis(id,PRETS[id]&&!(a.prevenu&&a.prevenu.prete)?'prete':'bientot');},
+  'voir-contact':el=>{UI.contactVisible=UI.contactVisible===el.dataset.id?null:el.dataset.id;},
+  replier:()=>{UI.attenteRepliee=!UI.attenteRepliee;sauverUI();},
+  'qr-plein':()=>{
+    const url=urlInscription();$('#qr-grand').innerHTML=qrSvg(url)||'<p style="color:#3d4a41">Code QR indisponible : vérifiez la connexion Internet.</p>';
+    $('#qr-url').textContent=url.replace(/^https?:\/\//,'').replace(/\?.*$/,'');$('#qr-plein').hidden=false;
+    try{const r=document.documentElement.requestFullscreen&&!document.fullscreenElement&&document.documentElement.requestFullscreen();if(r&&r.catch)r.catch(()=>{});}catch(e){}
+  },
+  'qr-fermer':()=>{$('#qr-plein').hidden=true;try{const r=document.fullscreenElement&&document.exitFullscreen();if(r&&r.catch)r.catch(()=>{});}catch(e){}},
+  exemple:()=>chargerExemple(),
+  'fin-service':()=>{if(UI.confirmFin&&Date.now()-UI.confirmFin<8000)return finDeService();UI.confirmFin=Date.now();},
+  'fin-garder':()=>{UI.confirmFin=0;},
+  vitesse:el=>{const v=+el.dataset.v;if(v>0)preparerSimulation();UI.vitesse=v;},
+  'sim-service':()=>{
+    preparerSimulation();
+    S.visites={};S.attente={};S.sale={};UI.prop=null;UI.manuel=null;UI.selVisite=null;UI.panneau='normal';
+    const d=new Date();d.setHours(7,0,0,0);decalage=d.getTime()-Date.now();UI.simT=maintenant();UI.vitesse=30;
+    // Le bilan du jour repart de zéro : on retire les repas d'un service simulé précédent le même jour.
+    const jour=d.toDateString();S.repas=S.repas.filter(r=>!(r&&Number.isFinite(r.f)&&new Date(r.f).toDateString()===jour));
+    sauverLocal();
+    toast('Service simulé : ouverture à 7 h, le temps passe 30 fois plus vite');
+  },
+  'sim-reset':()=>{UI.vitesse=0;S.visites={};S.attente={};S.sale={};decalage=0;UI.simT=null;UI.prop=null;UI.manuel=null;UI.selVisite=null;sauverLocal();toast('Salle vidée, retour à l\'heure réelle');},
+  bilan:()=>{UI.panneau=UI.panneau==='bilan'?'normal':'bilan';UI.prop=null;UI.manuel=null;UI.selVisite=null;UI.selSale=null;if(UI.panneau==='bilan'){VEL.bilan=null;chargerBilanVeloce();}},
+  'effacer-histo':async()=>{if(UI.confirmHisto&&Date.now()-UI.confirmHisto<8000){UI.confirmHisto=0;await store.viderRepas();toast('Historique effacé');return;}UI.confirmHisto=Date.now();},
+  sections:async()=>{const entrer=UI.panneau!=='sections';UI.panneau=entrer?'sections':'normal';UI.prop=null;UI.manuel=null;UI.selVisite=null;if(!entrer)await enregistrerConfig();if(entrer&&!infoServeur(UI.pinceau))UI.pinceau=S.config.serveurs[0].id;},
+  pinceau:el=>{UI.pinceau=el.dataset.s;},
+  'ajout-serveur':()=>{const id=COULEURS.find(c=>!infoServeur(c));if(!id)return;S.config.serveurs.push({id,nom:'Serveur '+(S.config.serveurs.length+1),actif:true});UI.pinceau=id;sauverConfigBientot();},
+  'retrait-serveur':()=>{const d=S.config.serveurs[S.config.serveurs.length-1];if(S.config.serveurs.length<2)return;
+    if(Object.values(S.visites).some(v=>v.serveur===d.id)){toast(d.nom+' a encore des tables occupées.');return;}
+    const p=S.config.serveurs[0].id;for(let n=1;n<=NB;n++)if(S.config.affectation[n]===d.id)S.config.affectation[n]=p;
+    S.config.serveurs.pop();if(UI.pinceau===d.id)UI.pinceau=p;sauverConfigBientot();},
+  origine:()=>{['s1','s2','s3'].forEach((id,i)=>{if(!infoServeur(id))S.config.serveurs.splice(i,0,{id,nom:'Serveur '+(i+1),actif:true});});S.config.affectation=sectionsOrigine();sauverConfigBientot();},
+  'zoom-moins':()=>changerZoom(-1),'zoom-plus':()=>changerZoom(1),'zoom-ajuster':()=>{UI.zoom=1;sauverUI();appliquerZoom();},
+  pivot:()=>{UI.pivot=!UI.pivot;UI.pivotAuto=false;sauverUI();},
+  installer:async()=>{if(!invitationInstall)return;invitationInstall.prompt();try{await invitationInstall.userChoice;}catch(e){}invitationInstall=null;}
+};
+// Zoom par paliers réguliers, qui garde sous le curseur (ou au centre du cadre) le même point du plan.
+function changerZoom(d,px,py){
+  const r=cadre.getBoundingClientRect();
+  const ax=(px??r.left+cadre.clientWidth/2)-r.left,ay=(py??r.top+cadre.clientHeight/2)-r.top;
+  const fx=(cadre.scrollLeft+ax)/cadre.scrollWidth,fy=(cadre.scrollTop+ay)/cadre.scrollHeight;
+  const i=ZOOMS.indexOf(UI.zoom);const z=ZOOMS[Math.min(ZOOMS.length-1,Math.max(0,(i<0?0:i)+d))];
+  if(z===UI.zoom)return;
+  UI.zoom=z;sauverUI();appliquerZoom();
+  cadre.scrollLeft=fx*cadre.scrollWidth-ax;cadre.scrollTop=fy*cadre.scrollHeight-ay;
+}
+
+// ---------- Affichage ----------
+const svg=$('#plan'),cadre=$('#cadre'),large=matchMedia('(min-width:1000px)');
+function rect(t,p=0){return{x:t.x-t.w/2-p,y:t.y-t.h/2-p,w:t.w+2*p,h:t.h+2*p};}
+function union(ts,p=0){let x1=1e9,y1=1e9,x2=-1e9,y2=-1e9;ts.forEach(n=>{const r=rect(TABLES[n]);x1=Math.min(x1,r.x);y1=Math.min(y1,r.y);x2=Math.max(x2,r.x+r.w);y2=Math.max(y2,r.y+r.h);});return{x:x1-p,y:y1-p,w:x2-x1+2*p,h:y2-y1+2*p,cx:(x1+x2)/2,cy:(y1+y2)/2};}
+function grappes(ts){const s=[...ts].map(n=>TABLES[n]).sort((a,b)=>a.r-b.r||a.i-b.i);const out=[];for(const t of s){const g=out[out.length-1];const p=g&&g[g.length-1];if(p&&p.r===t.r&&t.i===p.i+1&&joignable(p,t))g.push(t);else out.push([t]);}return out.map(g=>g.map(t=>t.n));}
+const rc=(u,cls,rx)=>`<rect class="${cls}" x="${u.x}" y="${u.y}" width="${u.w}" height="${u.h}" rx="${rx}"/>`;
+// Décalage vertical d'une ligne de texte, qui reste à l'endroit quand le plan est pivoté.
+const pos=(cx,cy,d)=>UI.pivot?[cx+d,cy]:[cx,cy+d];
+const txt=(x,y,cls,s)=>`<text x="${x}" y="${y}" class="${cls}"${UI.pivot?` transform="rotate(-90 ${x} ${y})"`:''}>${s}</text>`;
+
+function rendrePlan(){
+  const edition=UI.panneau==='sections';const moi=edition?null:vueServeur();
+  const occ=edition?{}:occupation();
+  let h=`<g${UI.pivot?` transform="matrix(0,1,-1,0,${H},0)"`:''}>`;
+  h+=`<rect class="fond-simple" x="16" y="16" width="${W-32}" height="${H-32}" rx="24"/>`;
+  const point=(x,y)=>`<circle class="serveur-point" cx="${x}" cy="${y}" r="7"/>`;
+  REPERES.forEach(([l,x,y])=>h+=txt(UI.pivot?x:Math.max(150,Math.min(W-150,x)),UI.pivot?Math.max(150,Math.min(H-150,y)):y,'repere',esc(l)));
+  for(let n=1;n<=NB;n++){
+    if(occ[n])continue;const t=TABLES[n];const s=serveurDe(n);const ferme=!edition&&!actif(s);const autre=moi&&s!==moi;
+    const sale=!edition&&S.sale[n];
+    if(sale){
+      const m=minutesDepuis(sale.depuis);const [x1,y1]=pos(t.x,t.y,-9),[x2,y2]=pos(t.x,t.y,12);
+      h+=`<g class="tb sale ${s}${m>=5?' long':''}${autre?' autre':''}${UI.selSale===n?' active':''}" data-n="${n}" role="button" tabindex="0" aria-label="Table ${n}, à débarrasser depuis ${m} minutes">${rc(rect(t),'f',4)}${point(t.x+t.w/2-5,t.y-t.h/2+5)}${txt(x1,y1,'num',n)}${txt(x2,y2,'lbl','à déb.')}</g>`;
+      continue;
+    }
+    h+=`<g class="tb ${s}${edition?' edition':''}${ferme?' ferme':''}${autre?' autre':''}" data-n="${n}" role="button" tabindex="0" aria-label="Table ${n}, ${ferme?'section fermée':'libre'}, ${esc(nomServeur(s))}">${rc(rect(t),'f',4)}${point(t.x+t.w/2-5,t.y-t.h/2+5)}${txt(t.x,t.y,'num',n)}</g>`;
+  }
+  if(!edition)for(const [id,v] of Object.entries(S.visites)){
+    const r=reste(v);const long=enRetard(v);const autre=moi&&v.serveur!==moi;
+    h+=`<g class="tb occ ${v.serveur}${UI.selVisite===id?' active':''}${autre?' autre':''}" data-v="${id}" role="button" tabindex="0" aria-label="${esc(libTables(v.tables))}, ${v.pers} personnes, libre dans ${delaiLisible(r)}">`;
+    grappes(v.tables).forEach((g,gi)=>{
+      const u=union(g);
+      if(long||v.etape==='addition')h+=rc(union(g,6),'anneau '+(long?'long':'addition'),9);
+      h+=rc(u,'f',5)+point(u.x+u.w-5,u.y+5);
+      if(gi===0){const [x1,y1]=pos(u.cx,u.cy,-11),[x2,y2]=pos(u.cx,u.cy,11);h+=txt(x1,y1,'num',esc(etiquette(v.tables)))+txt(x2,y2,'min',v.etape==='addition'?'Addition':'Occupée');}
+    });
+    h+='</g>';
+  }
+  if(!edition)for(const c of Object.values(PRETS))grappes(c.tables).forEach(g=>h+=rc(union(g,6),'pret',8));
+  if(UI.prop&&UI.prop.liste.length)grappes(UI.prop.liste[UI.prop.idx].tables).forEach(g=>h+=rc(union(g,9),'sel',10));
+  if(UI.manuel)UI.manuel.forEach(n=>h+=rc(union([n],9),'sel',10));
+  h+='</g>';
+  svg.setAttribute('viewBox',UI.pivot?`0 0 ${H} ${W}`:`0 0 ${W} ${H}`);
+  svg.innerHTML=h;
+  $('#b-pivot').setAttribute('aria-pressed',UI.pivot);
+  appliquerZoom();
+}
+// Taille du plan = taille « Ajuster » (tout le plan visible) × palier de zoom.
+function appliquerZoom(){
+  const vbW=UI.pivot?H:W,vbH=UI.pivot?W:H;const cw=cadre.clientWidth,ch=cadre.clientHeight;
+  if(cw){
+    let s=cw/vbW;if(large.matches&&ch>50)s=Math.min(s,ch/vbH);
+    const w=Math.floor(vbW*s*UI.zoom)+'px',h=Math.floor(vbH*s*UI.zoom)+'px';
+    if(svg.style.width!==w)svg.style.width=w;
+    if(svg.style.height!==h)svg.style.height=h;
+  }
+  $('#zoom-val').textContent=Math.round(UI.zoom*100)+' %';
+  requestAnimationFrame(()=>cadre.classList.toggle('peut-glisser',cadre.scrollWidth>cadre.clientWidth+2||cadre.scrollHeight>cadre.clientHeight+2));
+}
+
+let cleVue='';
+function rendreEntete(){
+  const vs=Object.values(S.visites);const tables=somme(vs,v=>v.tables.length);const couv=somme(vs,v=>v.pers);
+  const att=attenteTriee().length;const np=Object.keys(PRETS).length;
+  const sales=Object.values(S.sale);const salesLongues=sales.some(s=>minutesDepuis(s.depuis)>=5);
+  const sync={direct:['direct','Partagé en direct'],connexion:['','Connexion…'],lent:['lent','Connexion lente, données peut-être pas à jour'],local:['','Démo sur cet appareil'],erreur:['erreur','Partage indisponible']}[UI.sync];
+  $('#chiffres').innerHTML=`<span class="chip">Occupées <b>${tables}</b>/80</span><span class="chip">Couverts <b>${couv}</b></span><span class="chip${np?' alerte':''}">Attente <b>${att}</b>${np?' · '+np+' prête'+(np>1?'s':''):''}</span>`+
+    `<span class="chip${salesLongues?' alerte':''}">À débarrasser <b>${sales.length}</b></span>`+
+    (UI.vitesse?`<span class="chip alerte">Simulation ×${UI.vitesse} · ${hm(maintenant())}</span>`:'')+
+    `<span class="chip ${sync[0]}" title="${esc(sync[1])}"><i></i>${esc(sync[1])}</span>`;
+  const sel=$('#vue');const cle=S.config.serveurs.map(s=>s.id+':'+s.nom).join('|');
+  if(cle!==cleVue){cleVue=cle;sel.innerHTML='<option value="">Vue accueil</option>'+S.config.serveurs.map(s=>`<option value="${s.id}">Vue ${esc(s.nom)}</option>`).join('');}
+  const v=vueServeur()||'';if(sel.value!==v)sel.value=v;
+  for(const [id,p] of [['#b-service','normal'],['#b-bilan','bilan'],['#b-reglages',['reglages','sections','veloce','simulation'].includes(UI.panneau)?UI.panneau:'reglages']]){const b=$(id);b.classList.toggle('on',UI.panneau===p);b.setAttribute('aria-pressed',UI.panneau===p);}
+}
+
+function carteArrivee(){
+  const pa=prochainActuel();
+  const tb=[1,2,3,4,5,6,7,8].map(k=>`<button class="${UI.n===k?'on':''}" data-action="taille" data-n="${k}" aria-pressed="${UI.n===k}">${k}</button>`).join('');
+  return `<section class="carte"><div class="tete"><h2>Arrivée</h2><div class="pas"><button data-action="moins" aria-label="Une personne de moins">−</button><output aria-live="polite"><b>${UI.n}</b> pers.</output><button data-action="plus" aria-label="Une personne de plus">+</button></div></div>
+  <div class="tailles" role="group" aria-label="Nombre de personnes">${tb}</div>
+  <label class="champ" for="nom">Nom du groupe (facultatif)<input id="nom" type="text" autocomplete="off" placeholder="Tremblay" value="${esc(UI.nom)}"></label>
+  <div class="tour">${pa?`Au tour de <span class="pastille ${pa}"><i></i>${esc(nomServeur(pa))}</span>`:'Toutes les sections sont fermées.'}</div>
+  <div class="rang"><button class="prim" data-action="proposer">Proposer une table</button><button data-action="attente-ajout">Mettre en attente</button></div></section>`;
+}
+function carteProp(){
+  const p=UI.prop;
+  if(!p.liste.length){
+    const pv=p.prev;
+    const msg=pv?(pv.min===0?'Les tables libres sont gardées pour la liste d\'attente.':`Prochaine possibilité : ${libTables(pv.tables)}, dans ${delaiLisible(pv.min)}.`):'Aucune rangée n\'est assez longue pour ce groupe.';
+    return `<section class="carte prop"><div class="tete"><h2>Aucune table libre</h2><button class="lien" data-action="annuler-prop">Fermer</button></div>
+    <p class="grand">${p.n} pers.${p.nom?' · '+esc(p.nom):''}</p><div class="note alerte">${msg}</div>
+    <div class="rang">${p.attenteId?'':'<button class="prim" data-action="prop-attente">Mettre en attente</button>'}<button data-action="annuler-prop">Annuler</button></div></section>`;
+  }
+  const c=p.liste[p.idx];const notes=[];
+  if(c.sautes&&c.sautes.length)notes.push(`${c.sautes.map(s=>esc(nomServeur(s))).join(', ')} n'a pas de table libre pour ${p.n} : on passe au serveur suivant.`);
+  if(c.cheval)notes.push('Ces tables sont à cheval sur deux sections.');
+  if(c.coupes)notes.push('Rapprochez les tables avant d\'asseoir le groupe.');
+  return `<section class="carte prop ${c.serveur}"><div class="tete"><h2>Proposition${p.liste.length>1?` ${p.idx+1} sur ${p.liste.length}`:''}</h2><button class="lien" data-action="annuler-prop">Annuler</button></div>
+  <p class="grand">${libTables(c.tables)}</p>
+  <div class="meta"><span class="pastille"><i></i>${esc(nomServeur(c.serveur))}</span><span>${c.tables.length*2} places pour ${p.n} pers.${p.nom?' · '+esc(p.nom):''}</span></div>
+  ${p.attenteId?'':`<label class="champ" for="nom">Nom du groupe (facultatif)<input id="nom" type="text" autocomplete="off" placeholder="Tremblay" value="${esc(p.nom||'')}"></label>`}
+  ${notes.map(n=>`<div class="note">${n}</div>`).join('')}
+  <div class="rang"><button class="prim" data-action="asseoir-prop">Asseoir ${p.n} pers.</button>${p.liste.length>1?'<button data-action="autre">Autre table</button>':''}</div>
+  <p class="aide">Vous pouvez aussi toucher une table libre sur le plan pour choisir vous-même.</p></section>`;
+}
+function carteManuel(){
+  const ts=[...UI.manuel].sort((a,b)=>a-b);const s=serveurDe(ts[0]);const cap=ts.length*2;const notes=[];
+  if(cap<UI.n)notes.push(`Il manque ${UI.n-cap} place${UI.n-cap>1?'s':''} : touchez d'autres tables.`);
+  if(new Set(ts.map(serveurDe)).size>1)notes.push(`Tables de plusieurs sections : le groupe ira à ${esc(nomServeur(s))}.`);
+  if(grappes(ts).length>1)notes.push('Ces tables ne sont pas voisines.');
+  return `<section class="carte prop ${s}"><div class="tete"><h2>Choix manuel</h2><button class="lien" data-action="vider">Annuler</button></div>
+  <p class="grand">${libTables(ts)}</p>
+  <div class="pas"><button data-action="moins" aria-label="Une personne de moins">−</button><output><b>${UI.n}</b> pers.</output><button data-action="plus" aria-label="Une personne de plus">+</button></div>
+  <div class="meta"><span class="pastille"><i></i>${esc(nomServeur(s))}</span><span>${cap} places · ${UI.n} pers.</span></div>
+  ${notes.map(n=>`<div class="note alerte">${n}</div>`).join('')}
+  <div class="rang"><button class="prim" data-action="asseoir-manuel" ${cap<UI.n?'disabled':''}>Asseoir ${UI.n} pers.</button></div>
+  <p class="aide">Touchez d'autres tables pour les ajouter ou les retirer.</p></section>`;
+}
+function carteVisite(id){
+  const v=S.visites[id];const r=reste(v);const est=ST[CAT(v.pers)].est;const long=enRetard(v);
+  return `<section class="carte prop ${v.serveur}"><div class="tete"><h2>Table occupée</h2><button class="lien" data-action="fermer-sel">Fermer</button></div>
+  <p class="grand">${libTables(v.tables)}</p>
+  <div class="meta"><span class="pastille"><i></i>${esc(nomServeur(v.serveur))}</span><span>${v.pers} pers.${v.nom?' · '+esc(v.nom):''}</span><span>Arrivés à ${hm(v.arrivee)}, il y a ${minutesDepuis(v.arrivee)} min</span></div>
+  <div class="note${long?' alerte':''}">Disponibilité estimée : <b>${delaiLisible(r)}</b>.${long?` Repas plus long que la moyenne (${est} min).`:''}</div>
+  <div class="etapes" role="group" aria-label="Étape du repas">${ETAPES.map(([k,l])=>`<button class="${v.etape===k?'on':''}" aria-pressed="${v.etape===k}" data-action="etape" data-e="${k}">${l}</button>`).join('')}</div>
+  <div class="rang"><button class="prim" data-action="payer">Addition payée</button></div>
+  <p class="aide">${v.tables.length>1?'Les tables passeront':'La table passera'} « à débarrasser ». Avec Veloce branché, c'est automatique dès que la serveuse encaisse.</p>
+  <div><button class="lien" data-action="annuler-visite">Annuler cette place (erreur de saisie)</button></div></section>`;
+}
+function carteDemarrer(){
+  return `<section class="carte"><div class="tete"><h2>Salle vide</h2></div>
+  <p class="aide">Lancez une simulation : des groupes arrivent de 7 h à 14 h, le temps passe 30 fois plus vite, et vous voyez la rotation, la liste d'attente et les prévisions travailler. Ou remplissez la salle d'un coup avec un service d'exemple.</p>
+  <div class="rang"><button class="prim" data-action="sim-service">Lancer une simulation</button><button data-action="exemple" ${UI.chargement?'disabled':''}>${UI.chargement?'Chargement…':'Service d\'exemple'}</button></div></section>`;
+}
+function carteSimulation(){
+  const v=UI.vitesse;
+  const bt=VITESSES.map(x=>`<button class="${v===x?'on':''}" aria-pressed="${v===x}" data-action="vitesse" data-v="${x}">${x?'×'+x:'Pause'}</button>`).join('');
+  return `<section class="carte"><div class="tete"><h2>Simulation</h2>${v?`<span class="etat-sim"><span class="point" aria-hidden="true"></span>${hm(maintenant())} · ×${v}</span>`:''}</div>
+  <p class="aide">Le temps passe plus vite : des groupes arrivent selon l'affluence d'un brunch, avancent dans leur repas et repartent. Tout se passe sur cet appareil.</p>
+  <div class="vitesses" role="group" aria-label="Vitesse de la simulation">${bt}</div>
+  <label class="bascule"><input type="checkbox" id="auto-placer" ${UI.autoPlacer?'checked':''}>L'accueil place tout seul les groupes en attente</label>
+  <p class="aide">Décochez pour placer vous-même les groupes signalés « table prête ». Un groupe qui attend plus de 25 minutes repart.</p>
+  <div class="rang"><button data-action="sim-service">${Object.keys(S.visites).length?'Recommencer à 7 h (vide la salle)':'Service complet de 7 h à 14 h'}</button></div>
+  ${store.db?'':'<div><button class="lien" data-action="sim-reset">Arrêter et revenir à l\'heure réelle</button></div>'}</section>`;
+}
+function carteRotation(){
+  const pa=prochainActuel();const ch=chargeParServeur();const tot=tablesParServeur();const m=S.config.mode;
+  const li=S.config.serveurs.map(s=>`<li class="${s.id}"><span class="pastille"><i></i></span><div class="q"><b>${esc(s.nom)}${s.id===pa?'<em class="badge">Prochain</em>':''}</b><small>${s.actif?`${ch[s.id].tables} sur ${tot[s.id]||0} tables · ${ch[s.id].couverts} couverts`:'Section fermée'}</small></div>${s.actif&&s.id!==pa?`<button data-action="tour" data-s="${s.id}">Mettre au tour</button>`:''}</li>`).join('');
+  return `<section class="carte"><div class="tete"><h2>Rotation</h2><div class="seg" role="group" aria-label="Règle de rotation"><button class="${m==='tour'?'on':''}" aria-pressed="${m==='tour'}" data-action="mode" data-m="tour">Tour de rôle</button><button class="${m==='charge'?'on':''}" aria-pressed="${m==='charge'}" data-action="mode" data-m="charge">Moins chargé</button></div></div>
+  <p class="aide">${m==='tour'?'Chaque arrivée va au serveur suivant. S\'il n\'a pas de table adaptée, on passe au suivant.':'Chaque arrivée va au serveur qui a le moins de couverts en ce moment.'}</p>
+  <ul class="liste">${li}</ul></section>`;
+}
+// ---------- Liste d'attente (colonne de gauche) et code QR d'inscription ----------
+// Les clients s'inscrivent sur leur téléphone (inscription.html). Avec le serveur du restaurant branché
+// (bouton Veloce), l'inscription arrive ici par lui ; sinon, démonstration : seulement sur ce même appareil.
+const FORMULAIRE_PUBLIC='https://babmatjul.github.io/plan-de-salle-demo/inscription.html';
+const CLE_INSCR='plan-salle-codex-inscriptions-v1',CLE_EST='plan-salle-codex-estimations-v1',SEUIL_AVIS=10;
+const lireLS=(k,d)=>{try{const v=JSON.parse(localStorage.getItem(k)||'null');return v??d;}catch(e){return d;}};
+const ecrireLS=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}};
+const serviceActif=()=>!!(VEL.url&&VEL.cle&&VEL.etat==='ok');
+const veutAvis=a=>!!(a&&a.prevenir&&(a.prevenir.texto||a.prevenir.courriel));
+const telLisible=t=>{const d=String(t||'').replace(/\D/g,'').slice(-10);return d.length===10?`${d.slice(0,3)} ${d.slice(3,6)}-${d.slice(6)}`:esc(t||'');};
+function urlInscription(){
+  const local=location.protocol==='http:'&&/^(localhost|127\.0\.0\.1)$/.test(location.hostname);
+  const u=(location.protocol==='https:'&&!dansClaude())||local?new URL('inscription.html',location.href):new URL(FORMULAIRE_PUBLIC);
+  u.search='';u.hash='';
+  if(VEL.url&&VEL.cle)u.searchParams.set('s',VEL.url.replace(/\/+$/,''));
+  return u.href;
+}
+let cleQr='',svgQr='';
+function qrSvg(texte){
+  if(texte===cleQr)return svgQr;
+  if(typeof qrcode!=='function')return '';
+  try{const q=qrcode(0,'M');q.addData(texte);q.make();svgQr=q.createSvgTag({cellSize:4,margin:2,scalable:true,alt:'Code QR d\'inscription à la liste d\'attente'});cleQr=texte;return svgQr;}catch(e){return '';}
+}
+function ligneAttente(id,x){
+  const c=PRETS[id];const m=minutesDepuis(x.ajout);const p=c?null:prevision(x.pers);
+  const eta=c?`Table prête : ${libTables(c.tables)} · ${esc(nomServeur(c.serveur))}`:p?(p.min===0?'Bientôt une table':`Table prévue dans ${delaiLisible(p.min)}`):'Groupe trop grand pour une rangée';
+  const puces=[];
+  if(x.source==='qr')puces.push('<span class="puce">Code QR</span>');
+  if(veutAvis(x)){
+    const canal=[x.prevenir.texto?'Texto':'',x.prevenir.courriel?'Courriel':''].filter(Boolean).join(' + ');
+    const t=x.prevenu&&(x.prevenu.prete||x.prevenu.bientot);
+    puces.push(`<span class="puce${t?' ok':''}">${canal}${t?` · avis envoyé à ${hm(t)}`:''}</span>`);
+  }
+  const contact=x.contact&&(x.contact.telephone||x.contact.courriel)
+    ?`<small>${UI.contactVisible===id?[telLisible(x.contact.telephone),esc(x.contact.courriel||'')].filter(Boolean).join(' · ')+' ':''}<button class="lien" data-action="voir-contact" data-id="${esc(id)}">${UI.contactVisible===id?'Masquer':'Voir les coordonnées'}</button></small>`:'';
+  const type=c&&!(x.prevenu&&x.prevenu.prete)?'prete':'bientot';
+  const avis=veutAvis(x)&&!(x.prevenu&&x.prevenu[type])?`<button data-action="prevenir" data-id="${esc(id)}">${type==='prete'?'Prévenir : prête':'Prévenir'}</button>`:'';
+  return `<li class="${c?'pret':''}"><div class="q"><b>${c?'<span class="point" aria-hidden="true"></span> ':''}${esc(x.nom||'Sans nom')} · ${x.pers} pers.</b><small>Attend depuis ${m} min · ${eta}</small>${puces.length?`<span class="puces">${puces.join('')}</span>`:''}${contact}</div>
+  <div class="rang-mini">${c?`<button class="prim" data-action="placer-pret" data-id="${esc(id)}">Placer ici</button>`:`<button data-action="placer-attente" data-id="${esc(id)}">Choisir</button>`}${avis}<button class="lien" data-action="retirer-attente" data-id="${esc(id)}">Retirer</button></div></li>`;
+}
+function rendreAttente(){
+  const el=$('#attente');
+  const visible=!vueServeur()&&UI.panneau==='normal'&&UI.onglet==='accueil';
+  if(!visible){el.innerHTML='';return;}
+  const a=attenteTriee();
+  el.innerHTML=`<section class="carte"><div class="tete"><h2>Liste d'attente</h2><span class="etat-sim">${pluriel(a.length,'groupe')}</span></div>
+  ${a.length?`<ul class="liste liste-attente">${a.map(([id,x])=>ligneAttente(id,x)).join('')}</ul>`:'<p class="vide">Personne en attente. Ajoutez un groupe depuis Arrivée.</p>'}
+  <button class="qr-mini" data-action="qr-plein"><b>Afficher le code QR</b><small>Inscription des clients ↗</small></button>
+  <p class="aide">${serviceActif()?'Inscriptions en ligne actives.':'Mode local : les inscriptions restent sur cet appareil.'}</p></section>`;
+}
+// Une inscription du formulaire (serveur ou démonstration) devient une ligne de la liste d'attente.
+const entreeInscription=(i,mode)=>({nom:[i.prenom,i.nom?i.nom[0]+'.':''].filter(Boolean).join(' '),pers:i.personnes,ajout:i.ajout,source:'qr',mode,inscription:i.id,
+  contact:{telephone:i.telephone||null,courriel:i.courriel||null},prevenir:i.prevenir||{},prevenu:i.prevenu&&!Array.isArray(i.prevenu)?i.prevenu:{}});
+async function fusionnerInscriptions(liste,mode){
+  const nouvelles=[];
+  for(const i of liste){
+    if(!i||!i.id||!Number.isFinite(i.personnes))continue;
+    const id='q'+i.id;const local=S.attente[id];
+    if(i.statut==='attente'){
+      if(!local&&!UI.inscriptionsFinies.has(i.id)){await store.setAttente(id,entreeInscription(i,mode));nouvelles.push(i);}
+      else if(local&&i.prevenu&&!Array.isArray(i.prevenu)&&JSON.stringify(local.prevenu||{})!==JSON.stringify({...(local.prevenu||{}),...i.prevenu}))await store.setAttente(id,{...local,prevenu:{...(local.prevenu||{}),...i.prevenu}});
+    }else if(local){UI.inscriptionsFinies.add(i.id);await store.delAttente(id);if(i.statut==='annule')toast(`${local.nom} a annulé son inscription`);}
+  }
+  if(nouvelles.length)toast(nouvelles.length>1?`${nouvelles.length} nouvelles inscriptions`:`Nouvelle inscription : ${nouvelles[0].prenom} · ${nouvelles[0].personnes} pers.`);
+}
+function importerInscriptionsDemo(){if(VEL.url&&VEL.cle)return;const l=lireLS(CLE_INSCR,[]);if(Array.isArray(l)&&l.length)fusionnerInscriptions(l,'demo');}
+function majInscriptionDemo(id,patch){
+  const l=lireLS(CLE_INSCR,[]);const i=Array.isArray(l)&&l.find(x=>x.id===id);if(i){Object.assign(i,patch);ecrireLS(CLE_INSCR,l);}
+  const e=lireLS(CLE_EST,{});e[id]={...(e[id]||{}),...patch};ecrireLS(CLE_EST,e);
+}
+// Placé ou retiré à l'accueil : le client le voit sur son téléphone.
+async function informerInscription(a,statut){
+  if(!a||a.source!=='qr')return;
+  UI.inscriptionsFinies.add(a.inscription);
+  if(a.mode==='service'&&VEL.url&&VEL.cle){try{await appelVeloce('/attente/'+encodeURIComponent(a.inscription),{methode:'POST',corps:{statut}});}catch(e){}}
+  else majInscriptionDemo(a.inscription,{statut});
+}
+// Position et attente estimée de chaque inscription, envoyées au client.
+function estimationsInscriptions(){
+  const r={};
+  attenteTriee().forEach(([id,a],i)=>{if(a.source!=='qr')return;const p=PRETS[id]?{min:0}:prevision(a.pers);r[a.inscription]={position:i+1,minutes:p?p.min:null,prete:!!PRETS[id]};});
+  return r;
+}
+let dernieresEstimations='';
+async function publierEstimations(){
+  const est=estimationsInscriptions();
+  if(serviceActif()){if(Object.keys(est).length)try{await appelVeloce('/attente/estimations',{methode:'POST',corps:est});}catch(e){}return;}
+  const cle=JSON.stringify(est);if(cle===dernieresEstimations)return;dernieresEstimations=cle;
+  const e=lireLS(CLE_EST,{});for(const [id,v] of Object.entries(est))e[id]={...(e[id]||{}),...v,statut:'attente'};ecrireLS(CLE_EST,e);
+}
+// Avis au client : par le serveur du restaurant (texto, courriel), ou simulé en démonstration. Un seul par type.
+const avisEnCours=new Set();
+async function envoyerAvis(id,type){
+  const a=S.attente[id];
+  if(!veutAvis(a)||(a.prevenu&&a.prevenu[type])||avisEnCours.has(id+type))return;
+  avisEnCours.add(id+type);
+  try{
+    let note='simulé (démonstration)';
+    if(a.mode==='service'){
+      if(!VEL.url||!VEL.cle){toast('Rebranchez le connecteur pour prévenir ce client.');return;}
+      const r=await appelVeloce('/attente/'+encodeURIComponent(a.inscription),{methode:'POST',corps:{prevenir:type}});
+      const env=(r&&r.envoi)||{};const v=Object.values(env).filter(x=>x&&typeof x==='object');
+      if(!env.deja&&!r.inscription?.prevenu?.[type]){toast(`Avis à ${a.nom} : envoi incomplet, nouvel essai nécessaire`);return;}
+      note=env.deja?'déjà envoyé':v.some(x=>x.envoye)?'envoyé':'simulé : aucun compte de textos ou de courriels réglé';
+    }else majInscriptionDemo(a.inscription,{prevenu:[...Object.keys(a.prevenu||{}),type]});
+    const cur=S.attente[id];if(cur)await store.setAttente(id,{...cur,prevenu:{...(cur.prevenu||{}),[type]:maintenant()}});
+    const canal=[a.prevenir.texto?'texto':'',a.prevenir.courriel?'courriel':''].filter(Boolean).join(' et ');
+    toast(`${a.nom} prévenu par ${canal} : table ${type==='prete'?'prête':'bientôt prête'} (${note})`);
+  }catch(e){toast(`Avis à ${a.nom} : ${e.message}`);}
+  finally{avisEnCours.delete(id+type);}
+}
+function verifierAvisAuto(){
+  if(!UI.avisAuto)return;
+  for(const [id,a] of attenteTriee()){
+    if(!veutAvis(a)||(a.prevenu&&a.prevenu.bientot))continue;
+    const p=PRETS[id]?{min:0}:prevision(a.pers);
+    if(p&&p.min<=SEUIL_AVIS)envoyerAvis(id,'bientot');
+  }
+}
+function cartePrevisions(filtre){
+  const vs=Object.entries(S.visites).filter(([,v])=>!filtre||v.serveur===filtre).map(([id,v])=>({id,v,r:reste(v)})).sort((a,b)=>a.r-b.r).slice(0,6);
+  const li=vs.map(({v,r})=>`<li class="${v.serveur}"><span class="pastille"><i></i></span><div class="q"><b>${libTables(v.tables)} · ${v.tables.length*2} places</b><small>${LIB_ETAPE[v.etape]||'Assis'} · arrivés à ${hm(v.arrivee)}</small></div><span class="eta">${delaiLisible(r)}</span></li>`).join('');
+  const lignes=Object.keys(BASE).map(k=>`<tr><td>${CAT_LIB[k]}</td><td>${ST[k].base} min</td><td>${ST[k].n?`${ST[k].med} min <small>(${ST[k].tot})</small>`:'—'}</td><td><b>${ST[k].est} min</b></td></tr>`).join('');
+  return `<section class="carte"><div class="tete"><h2>Prochaines tables libres</h2></div>${vs.length?`<ul class="liste">${li}</ul>`:'<p class="vide">Aucune table occupée.</p>'}
+  <div class="tete"><h2>Durée d'un repas</h2></div>
+  <div class="tableau"><table><thead><tr><th>Groupe</th><th>${dureesVeloce()?'Veloce':'Départ'}</th><th>Observée</th><th>Utilisée</th></tr></thead><tbody>${lignes}</tbody></table></div>
+  <p class="aide">Chaque table libérée ajoute sa durée réelle à l'historique (${S.repas.length} repas). Chaque étape du repas corrige ensuite l'estimation de la table en cours.</p></section>`;
+}
+function carteService(){
+  const k=Object.keys(S.visites).length;const conf=UI.confirmFin&&Date.now()-UI.confirmFin<8000;
+  return `<section class="carte"><div class="tete"><h2>Service</h2></div><p class="aide">La fin de service libère toutes les tables sans les compter dans l'historique.</p>
+  <div class="rang"><button class="danger" data-action="fin-service" ${UI.chargement?'disabled':''}>${UI.chargement?'Libération…':conf?`Confirmer : libérer ${pluriel(k,'groupe')}`:'Fin de service'}</button>${conf?'<button data-action="fin-garder">Garder</button>':''}</div></section>`;
+}
+function carteMesTables(){
+  const me=vueServeur();const s=infoServeur(me);
+  const mes=Object.entries(S.visites).filter(([,v])=>v.serveur===me).sort((a,b)=>a[1].arrivee-b[1].arrivee);
+  const couv=somme(mes,([,v])=>v.pers);const pa=prochainActuel();
+  const jour=new Date(maintenant()).toDateString();
+  const servis=S.repas.filter(r=>r&&r.s===me&&Number.isFinite(r.f)&&new Date(r.f).toDateString()===jour).length;
+  const li=mes.map(([id,v])=>{const r=reste(v);const add=v.etape==='addition';const long=enRetard(v);
+    return `<li class="${add?'pret':''}">${add?'<span class="point" aria-hidden="true"></span>':''}<div class="q"><b>${libTables(v.tables)} · ${v.pers} pers.${v.nom?' · '+esc(v.nom):''}</b><small>${LIB_ETAPE[v.etape]||'Assis'} · depuis ${minutesDepuis(v.arrivee)} min · ${long?'plus long que prévu':'libre dans '+delaiLisible(r)}</small></div><button class="${add?'prim':''}" data-action="etape-suivante" data-v="${esc(id)}">${BOUTON_SUIVANT[v.etape]||'Commande prise'}</button></li>`;}).join('');
+  return `<section class="carte prop ${me}"><div class="tete"><h2>Mes tables</h2>${pa===me&&s.actif?'<em class="badge">Prochain client pour vous</em>':''}</div>
+  <p class="grand">${esc(s.nom)}</p>
+  <div class="meta"><span>${pluriel(mes.length,'groupe')} à table · ${couv} couverts</span><span>${servis} servi${servis>1?'s':''} aujourd'hui</span>${s.actif?'':'<span>Section fermée</span>'}</div>
+  ${mes.length?`<ul class="liste">${li}</ul>`:'<p class="vide">Aucune table occupée dans votre section.</p>'}
+  <p class="aide">Le bouton de chaque ligne passe le repas à l'étape suivante ; à l'addition, il marque la table payée (à débarrasser). Les autres sections sont estompées sur le plan.</p></section>`;
+}
+// ---------- Bilan du service (journée de l'horloge affichée) ----------
+function calculerBilan(){
+  const t=maintenant();const jour=new Date(t).toDateString();
+  const rep=S.repas.filter(r=>r&&Number.isFinite(r.f)&&Number.isFinite(r.p)&&new Date(r.f).toDateString()===jour);
+  const cours=Object.values(S.visites).filter(v=>new Date(v.arrivee).toDateString()===jour);
+  const tous=[...rep.map(r=>({p:r.p,a:Number.isFinite(r.a)?r.a:r.f-(r.d||0)*6e4,s:r.s,tb:Array.isArray(r.tb)?r.tb:[],w:r.w||0})),...cours.map(v=>({p:v.pers,a:v.arrivee,s:v.serveur,tb:v.tables,w:v.attendu||0}))];
+  const att=tous.filter(x=>x.w>0);
+  const heures={};tous.forEach(x=>{const h=new Date(x.a).getHours();(heures[h]=heures[h]||{c:0,g:0});heures[h].c+=x.p;heures[h].g++;});
+  const hs=Object.keys(heures).map(Number);const hmin=Math.min(7,...hs),hmax=Math.max(13,...hs);
+  const parServeur={};tous.forEach(x=>{const k=x.s||'?';(parServeur[k]=parServeur[k]||{g:0,c:0});parServeur[k].g++;parServeur[k].c+=x.p;});
+  const parTable={};tous.forEach(x=>x.tb.forEach(n=>{parTable[n]=(parTable[n]||0)+1;}));
+  return{groupes:tous.length,enCours:cours.length,couverts:somme(tous,x=>x.p),termines:rep.length,
+    dureeMoy:rep.length?Math.round(somme(rep,r=>r.d||0)/rep.length):null,
+    attenteMoy:att.length?Math.round(somme(att,x=>x.w)/att.length):null,nbAttente:att.length,
+    heures,hmin,hmax,parServeur,top:Object.entries(parTable).sort((a,b)=>b[1]-a[1]||a[0]-b[0]).slice(0,5)};
+}
+function pasLisible(max){for(const p of [1,2,5,10,20,25,50,100,200])if(max/p<=4)return p;return 500;}
+// Graphique en barres (une série) : points = [{ label, val, info }], info s'affiche au survol.
+function graphBarres(points,titre){
+  const L=340,Ht=150,ml=30,mb=22,mt=10;const zone=Ht-mb-mt;
+  const max=Math.max(1,...points.map(x=>x.val));const p=pasLisible(max);const haut=Math.ceil(max/p)*p;
+  const bande=(L-ml)/Math.max(1,points.length);const bw=Math.min(28,bande*.62);
+  let s=`<svg viewBox="0 0 ${L} ${Ht}" role="img" aria-label="${esc(titre)}">`;
+  for(let v=0;v<=haut;v+=p){const y=mt+zone-(v/haut)*zone;s+=`<line class="${v?'grille':'axe'}" x1="${ml}" x2="${L}" y1="${y}" y2="${y}"/><text x="${ml-6}" y="${y}" text-anchor="end" dominant-baseline="central">${v}</text>`;}
+  points.forEach((x,i)=>{
+    const cx=ml+i*bande+bande/2;const hgt=(x.val/haut)*zone;const y=mt+zone-hgt;const x0=cx-bw/2;const r=Math.min(4,hgt/2,bw/2);
+    if(x.val>0)s+=`<path class="bar" data-i="${i}" d="M${x0},${mt+zone} V${y+r} Q${x0},${y} ${x0+r},${y} H${x0+bw-r} Q${x0+bw},${y} ${x0+bw},${y+r} V${mt+zone} Z"/>`;
+    s+=`<text x="${cx}" y="${Ht-6}" text-anchor="middle">${esc(x.label)}</text>`;
+    s+=`<rect class="cible" data-i="${i}" data-x="${cx}" data-y="${y}" data-info="${esc(x.info)}" x="${ml+i*bande}" y="${mt}" width="${bande}" height="${zone}" tabindex="0" aria-label="${esc(x.info)}"/>`;
+  });
+  s+='</svg>';
+  const table=`<table class="sr"><caption>${esc(titre)}</caption>${points.map(x=>`<tr><td>${esc(x.label)}</td><td>${esc(x.info)}</td></tr>`).join('')}</table>`;
+  return `<div class="graph">${s}<div class="bulle" hidden></div>${table}</div>`;
+}
+function graphHeures(b){
+  const pts=[];
+  for(let h=b.hmin;h<=b.hmax;h++){const c=b.heures[h]?.c||0,g=b.heures[h]?.g||0;pts.push({label:h+' h',val:c,info:`${h} h – ${h+1} h : ${pluriel(c,'couvert')}, ${pluriel(g,'groupe')}`});}
+  return graphBarres(pts,'Couverts par heure d\'arrivée');
+}
+function carteBilan(){
+  const b=calculerBilan();const date=new Date(maintenant()).toLocaleDateString('fr-CA',{weekday:'long',day:'numeric',month:'long'});
+  const tete=`<div class="tete"><h2>Bilan du service</h2><button class="lien" data-action="bilan">Fermer</button></div><p class="grand">${esc(date.charAt(0).toUpperCase()+date.slice(1))}</p>`;
+  if(!b.groupes)return `<section class="carte">${tete}<p class="vide">Aucun groupe aujourd'hui. Lancez une simulation de service pour remplir le bilan.</p><div class="rang"><button class="prim" data-action="sim-service">Lancer une simulation</button></div></section>`+carteBilanVeloce();
+  const moy=(b.couverts/b.groupes).toFixed(1).replace('.',',');
+  const tuiles=`<div class="tuiles">
+    <div class="tuile"><small>Groupes</small><b>${b.groupes}</b><small>dont ${b.enCours} à table</small></div>
+    <div class="tuile"><small>Couverts</small><b>${b.couverts}</b><small>${moy} par groupe</small></div>
+    <div class="tuile"><small>Durée moyenne</small><b>${b.dureeMoy!=null?b.dureeMoy+' min':'—'}</b><small>${pluriel(b.termines,'repas','repas')} terminé${b.termines>1?'s':''}</small></div>
+    <div class="tuile"><small>Attente moyenne</small><b>${b.attenteMoy!=null?b.attenteMoy+' min':'—'}</b><small>${pluriel(b.nbAttente,'groupe')} ${b.nbAttente>1?'ont':'a'} attendu</small></div></div>`;
+  const tot=Math.max(1,b.couverts);
+  const parts=S.config.serveurs.map(s=>{const x=b.parServeur[s.id]||{g:0,c:0};const pct=Math.round(x.c*100/tot);
+    return `<li class="${s.id}"><div class="q"><b>${esc(s.nom)}</b><small>${pluriel(x.g,'groupe')} · ${pluriel(x.c,'couvert')}</small><div class="piste"><div class="rempli" style="width:${pct}%"></div></div></div><span class="eta">${pct} %</span></li>`;}).join('');
+  const lignes=Object.keys(BASE).map(k=>`<tr><td>${CAT_LIB[k]}</td><td>${ST[k].tot}</td><td>${ST[k].med!=null?ST[k].med+' min':'—'}</td><td><b>${ST[k].est} min</b></td></tr>`).join('');
+  const top=b.top.map(([n,c])=>`<li>Table ${n} · ${pluriel(c,'groupe')}</li>`).join('');
+  const conf=UI.confirmHisto&&Date.now()-UI.confirmHisto<8000;
+  return `<section class="carte">${tete}${tuiles}</section>
+  <section class="carte"><div class="tete"><h2>Couverts par heure d'arrivée</h2></div>${graphHeures(b)}</section>
+  <section class="carte"><div class="tete"><h2>Par serveur</h2></div><p class="aide">Part des couverts de la journée : une rotation équitable donne des parts proches.</p><ul class="liste parts">${parts}</ul></section>
+  <section class="carte"><div class="tete"><h2>Durée par taille de groupe</h2></div><div class="tableau"><table><thead><tr><th>Groupe</th><th>Repas</th><th>Médiane</th><th>Estimation</th></tr></thead><tbody>${lignes}</tbody></table></div><p class="aide">Sur tout l'historique : c'est ce que l'estimation apprend.</p></section>
+  <section class="carte"><div class="tete"><h2>Tables les plus demandées</h2></div>${top?`<ol class="top">${top}</ol>`:'<p class="vide">Pas encore de données.</p>'}
+  <div class="rang"><button class="danger" data-action="effacer-histo">${conf?'Confirmer : effacer l\'historique':'Effacer l\'historique'}</button></div><p class="aide">Effacer l'historique remet aussi l'apprentissage des durées à zéro.</p></section>${carteBilanVeloce()}`;
+}
+function carteSections(){
+  const tot=tablesParServeur();const n=S.config.serveurs.length;
+  const li=S.config.serveurs.map((s,i)=>`<li class="${s.id}"><button class="pinceau${UI.pinceau===s.id?' on':''}" data-action="pinceau" data-s="${s.id}" aria-pressed="${UI.pinceau===s.id}" aria-label="Attribuer des tables à ${esc(s.nom)}"></button>
+  <div class="q"><input type="text" id="nom-${s.id}" data-serveur="${s.id}" value="${esc(s.nom)}" aria-label="Nom du serveur ${i+1}"><small>${tot[s.id]||0} tables · ${(tot[s.id]||0)*2} places</small></div>
+  <label class="bascule"><input type="checkbox" data-actif="${s.id}" ${s.actif?'checked':''}>Ouverte</label></li>`).join('');
+  return `<section class="carte"><div class="tete"><h2>Sections et serveurs</h2><button class="prim" data-action="sections">Terminer</button></div>
+  <p class="aide">Choisissez la couleur d'un serveur, puis touchez les tables de sa section sur le plan. Une section fermée ne reçoit plus de clients.</p>
+  <ul class="liste">${li}</ul>
+  <div class="rang">${n<5?'<button data-action="ajout-serveur">Ajouter un serveur</button>':''}${n>1?'<button data-action="retrait-serveur">Retirer le dernier</button>':''}<button data-action="origine">Sections d'origine</button></div></section>`;
+}
+// ---------- Tables à débarrasser ----------
+const libSource=s=>s.source==='veloce'?'Payée dans Veloce':s.source==='simulation'?'Payée (simulation)':'Addition payée';
+function carteSale(n){
+  const s=S.sale[n];const m=minutesDepuis(s.depuis);
+  return `<section class="carte prop ${serveurDe(n)}"><div class="tete"><h2>À débarrasser</h2><button class="lien" data-action="fermer-sale">Fermer</button></div>
+  <p class="grand">Table ${n}</p>
+  <div class="meta"><span>${libSource(s)} à ${hm(s.depuis)}${s.total!=null?' · '+argent(s.total):''}</span><span>depuis ${m} min</span></div>
+  <div class="rang"><button class="prim" data-action="debarrasser" data-n="${n}">Table prête</button></div>
+  <p class="aide">Une fois débarrassée, la table redevient libre pour l'accueil.</p></section>`;
+}
+function carteADebarrasser(){
+  const l=Object.entries(S.sale).sort((a,b)=>a[1].depuis-b[1].depuis);if(!l.length)return '';
+  const li=l.slice(0,6).map(([n,s])=>{const m=minutesDepuis(s.depuis);
+    return `<li class="${m>=5?'pret':''}"><div class="q"><b>Table ${n}</b><small>${libSource(s)} · depuis ${m} min</small></div><button data-action="debarrasser" data-n="${n}">Table prête</button></li>`;}).join('');
+  return `<section class="carte"><div class="tete"><h2>À débarrasser</h2><span class="etat-sim">${pluriel(l.length,'table')}</span></div><ul class="liste">${li}${l.length>6?`<li><div class="q"><small>Et ${pluriel(l.length-6,'autre table','autres tables')}.</small></div></li>`:''}</ul></section>`;
+}
+// ---------- Connexion à Veloce ----------
+// Un seul branchement pour tout le restaurant : le connecteur lit dans le nuage Veloce les factures
+// de toutes les tablettes des serveuses. Rien n'est installé sur ces tablettes.
+const dansClaude=()=>!!(window.claude&&window.claude.use);
+function carteVeloce(){
+  const s=VEL.sante,etat=VEL.etat;
+  const lib=etat==='ok'?`Branché sur Veloce${s&&s.dernierSucces?` · mis à jour il y a ${Math.max(0,Math.round((Date.now()-s.dernierSucces)/1000))} s`:''}`
+    :etat==='erreur'?esc(VEL.message):etat==='connexion'?'Branchement…':'Pas encore branché';
+  const durees=VEL.durees?Object.keys(BASE).map(k=>{const p=VEL.durees.parTaille&&VEL.durees.parTaille[k];return `<tr><td>${CAT_LIB[k]}</td><td>${p?p.mediane+' min':'—'}</td><td>${p?p.n:0}</td><td><b>${ST[k].base} min</b></td></tr>`;}).join(''):'';
+  const c=VEL.conf;
+  const apercu=c&&c.serveurs?`<div class="note"><b>Proposition de Veloce</b><ul class="liste">${c.serveurs.map(x=>`<li class="${x.id}"><span class="pastille"><i></i></span><div class="q"><b>${esc(x.nom)}</b><small>${esc(((x.veloce&&x.veloce.employes)||[]).join(', ')||'—')} · ${pluriel(Object.values(c.affectation||{}).filter(a=>a===x.id).length,'table')}</small></div></li>`).join('')}</ul>${c.sansSection&&c.sansSection.length?`<p class="aide">${pluriel(c.sansSection.length,'table')} sans historique iront à ${esc(c.serveurs[0]?c.serveurs[0].nom:'la première section')}.</p>`:''}<div class="rang"><button class="prim" data-action="vel-appliquer">Appliquer au plan</button><button data-action="vel-annuler-conf">Annuler</button></div></div>`:'';
+  return `<section class="carte"><div class="tete"><h2>Connexion à Veloce</h2><button class="lien" data-action="veloce">Fermer</button></div>
+  <p class="aide">Un seul branchement pour tout le restaurant. Quand une serveuse encaisse une table sur sa tablette Veloce, la table passe « à débarrasser » ici, et le plan apprend la vraie durée du repas. Rien à installer ni à changer sur les tablettes Veloce.</p>
+  <div class="etat-veloce ${etat}"><i></i><span>${lib}</span></div>
+  ${dansClaude()?'<div class="note alerte">Depuis la page Claude, le navigateur ne peut pas joindre le connecteur : utilisez le lien GitHub ou l\'application installée sur la tablette.</div>':''}
+  <label class="champ" for="vel-url">Adresse du connecteur<input id="vel-url" type="url" autocomplete="off" placeholder="https://plan-beauport.exemple.com" value="${esc(VEL.saisieUrl)}"><small>Donnée par la personne qui a installé le connecteur.</small></label>
+  <label class="champ" for="vel-cle">Clé d'accès<input id="vel-cle" type="password" autocomplete="off" value="${esc(VEL.saisieCle)}"><small>Le mot de passe choisi à l'installation du connecteur ; il protège les ventes du restaurant.</small></label>
+  <div class="rang"><button class="prim" data-action="vel-connecter">${etat==='ok'?'Rebrancher':'Brancher'}</button>${VEL.url?'<button data-action="vel-deconnecter">Débrancher</button>':''}</div>
+  <p class="aide">Le connecteur est un petit programme installé une seule fois, sur un serveur : il lit les factures de toutes les tablettes dans le nuage Veloce et garde les identifiants Veloce. Cet appareil n'enregistre que l'adresse et la clé ; on les saisit une fois sur chaque appareil qui affiche le plan.</p></section>
+  ${etat==='ok'?`<section class="carte"><div class="tete"><h2>Tables payées</h2></div>
+  <p class="aide">Dès qu'une serveuse encaisse une table sur sa tablette Veloce, elle passe « à débarrasser » sur le plan${s&&s.retardCaisseSecondes!=null?`, environ ${s.retardCaisseSecondes} s après l'encaissement`:''}.</p>
+  ${VEL.recents.length?`<ul class="liste">${VEL.recents.map(r=>`<li><div class="q"><b>Table ${r.table}</b><small>payée à ${hm(r.a)}${r.total!=null?' · '+argent(r.total):''}</small></div></li>`).join('')}</ul>`:'<p class="vide">Aucune table payée depuis la connexion.</p>'}
+  ${durees?`<div class="tete"><h2>Durées apprises</h2></div><div class="tableau"><table><thead><tr><th>Groupe</th><th>Médiane</th><th>Repas</th><th>Maintenant</th></tr></thead><tbody>${durees}</tbody></table></div><p class="aide">« Maintenant » tient compte de l'heure et du jour ; c'est la durée qu'utilise le plan.</p>`:''}
+  <div class="tete"><h2>Serveurs et sections</h2></div><p class="aide">Reprend les sections de Veloce et les tables que chaque serveur sert d'habitude.</p>
+  ${apercu||'<div class="rang"><button data-action="vel-importer">Importer de Veloce</button></div>'}</section>`:''}`;
+}
+function carteBilanVeloce(){
+  if(VEL.etat!=='ok')return '';
+  const b=VEL.bilan;
+  if(!b)return `<section class="carte"><div class="tete"><h2>Ventes du jour (Veloce)</h2></div><p class="vide">Chargement…</p></section>`;
+  if(b.erreur)return `<section class="carte"><div class="tete"><h2>Ventes du jour (Veloce)</h2></div><p class="vide">${esc(b.erreur)}</p></section>`;
+  const tuiles=`<div class="tuiles">
+    <div class="tuile"><small>Ventes en salle</small><b>${argent(b.ventesSalle)}</b><small>${pluriel(b.groupes,'groupe')} · ${pluriel(b.couverts,'couvert')}</small></div>
+    <div class="tuile"><small>Par place et par heure</small><b>${argent(b.ventesParPlaceHeure)}</b><small>sur ${PLACES} places</small></div>
+    <div class="tuile"><small>Ticket par client</small><b>${b.ticketParClient!=null?argent(b.ticketParClient):'—'}</b><small>${b.ticketParGroupe!=null?argent(b.ticketParGroupe)+' par groupe':'—'}</small></div>
+    <div class="tuile"><small>Pourboires</small><b>${argent(b.pourboires)}</b><small>en salle</small></div></div>`;
+  const serv=(b.parServeur||[]).slice(0,6).map(x=>`<li><div class="q"><b>${esc(x.nom)}</b><small>${pluriel(x.groupes,'groupe')} · ${argent(x.ventes)} · pourboires ${argent(x.pourboires)}</small><div class="piste"><div class="rempli" style="width:${Math.round(x.partVentes*100)}%;background:var(--vert)"></div></div></div><span class="eta">${Math.round(x.partVentes*100)} %</span></li>`).join('');
+  const tables=(b.parTable||[]);const top=tables.slice(0,5).map(t=>`<li>Table ${t.table} · ${argent(t.ventesParHeure)} de l'heure (${pluriel(t.groupes,'groupe')})</li>`).join('');
+  const bas=tables.length>5?tables.slice(-3).reverse().map(t=>`<li>Table ${t.table} · ${argent(t.ventesParHeure)} de l'heure</li>`).join(''):'';
+  const a=VEL.affluence;const jours=['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
+  const ga=a&&a.besoin&&a.joursObserves?graphBarres(a.besoin.filter(h=>h.heure>=6&&h.heure<=15).map(h=>({label:h.heure+' h',val:Math.round(h.arrivees),info:`${h.heure} h : environ ${Math.round(h.arrivees)} couverts, ${pluriel(h.serveurs,'serveur')} conseillé${h.serveurs>1?'s':''}`})),'Couverts attendus par heure'):'';
+  return `<section class="carte"><div class="tete"><h2>Ventes du jour (Veloce)</h2></div>${tuiles}</section>
+  <section class="carte"><div class="tete"><h2>Ventes par serveur</h2></div><ul class="liste parts">${serv||'<li><div class="q"><small>Pas encore de ventes aujourd\'hui.</small></div></li>'}</ul></section>
+  <section class="carte"><div class="tete"><h2>Rentabilité des tables</h2></div><p class="aide">Ventes par heure d'occupation de la table.</p>${top?`<ol class="top">${top}</ol>${bas?`<p class="aide">Les moins rentables :</p><ol class="top">${bas}</ol>`:''}`:'<p class="vide">Pas encore de données.</p>'}</section>
+  ${ga?`<section class="carte"><div class="tete"><h2>Affluence attendue (${jours[a.jour]})</h2></div>${ga}<p class="aide">Moyenne des ${a.joursObserves} derniers ${jours[a.jour]}s. Serveurs conseillés : ${a.besoin.filter(h=>h.serveurs).map(h=>h.heure+' h : '+h.serveurs).join(' · ')}.</p></section>`:''}`;
+}
+function carteReglages(){
+  return `<section class="carte"><div class="tete"><h2>Réglages</h2></div><p class="aide">Préparez la salle avant le service.</p>
+  <div class="raccourcis"><button data-action="sections">Serveurs et sections</button><button data-action="veloce">Connecteur Veloce</button></div>
+  <label class="bascule"><input type="checkbox" id="avis-auto" ${UI.avisAuto?'checked':''}>Prévenir les clients ${SEUIL_AVIS} min avant leur table</label>
+  <button data-action="simulation">Ouvrir la simulation</button></section>`+carteTablette()+carteRotation()+carteService();
+}
+function rendrePanneau(){
+  const act=document.activeElement;const fid=act&&act.id;const sel=fid&&act.selectionStart!=null?[act.selectionStart,act.selectionEnd]:null;
+  let haut='',bas='';
+  const service=UI.panneau==='normal';
+  $('#onglets-service').hidden=!service;
+  for(const nom of ['accueil','table']){const b=$('#onglet-'+nom);b.classList.toggle('on',UI.onglet===nom);b.setAttribute('aria-pressed',UI.onglet===nom);}
+  $('#onglet-accueil').textContent=vueServeur()?'Mes tables':`Arrivées et attente (${attenteTriee().length})`;
+  const fiche=UI.selSale&&S.sale[UI.selSale]?carteSale(UI.selSale):UI.selVisite&&S.visites[UI.selVisite]?carteVisite(UI.selVisite):'';
+  if(UI.panneau==='reglages')haut=carteReglages();
+  else if(UI.panneau==='sections')haut=carteSections();
+  else if(UI.panneau==='bilan')haut=carteBilan()+cartePrevisions(vueServeur());
+  else if(UI.panneau==='veloce')haut=carteVeloce();
+  else if(UI.panneau==='simulation')haut=salleConnectee()?'<section class="carte"><h2>Simulation</h2><p>Débranchez le connecteur dans les réglages pour retrouver la démonstration locale.</p><button data-action="veloce">Ouvrir le connecteur</button></section>':carteDemarrer()+carteSimulation();
+  else if(UI.onglet==='table')haut=fiche||(UI.manuel?carteManuel():'<section class="carte etat-vide"><h2>Choisissez une table</h2><p>Touchez une table sur le plan pour placer un groupe, suivre son repas ou la rendre disponible.</p></section>');
+  else if(vueServeur())haut=carteMesTables();
+  else haut=UI.prop?carteProp():carteArrivee();
+  if(service&&UI.onglet==='accueil')bas=carteADebarrasser();
+  if(service&&UI.vitesse)bas+='<section class="carte"><h2>Simulation en cours</h2><p class="aide">Le temps est accéléré. Ces données sont fictives.</p><button data-action="simulation">Gérer la simulation</button></section>';
+  $('#haut').innerHTML=haut;$('#bas').innerHTML=bas;
+  if(fid){const el=document.getElementById(fid);if(el&&el!==act){el.focus({preventScroll:true});if(sel&&el.setSelectionRange)try{el.setSelectionRange(sel[0],sel[1]);}catch(e){}}}
+}
+function nettoyerUI(){
+  if(UI.selVisite&&!S.visites[UI.selVisite])UI.selVisite=null;
+  if(UI.selSale&&!S.sale[UI.selSale])UI.selSale=null;
+  const occ=occupees();
+  if(UI.manuel){for(const n of [...UI.manuel])if(occ[n])UI.manuel.delete(n);if(!UI.manuel.size)UI.manuel=null;}
+  if(UI.prop&&UI.prop.attenteId&&!S.attente[UI.prop.attenteId])UI.prop.attenteId=null;
+  if(UI.prop&&UI.prop.liste.length){const c=UI.prop.liste[UI.prop.idx];if(!c||c.tables.some(n=>occ[n]||!actif(serveurDe(n))))faireProposition(UI.prop.n,UI.prop.nom,UI.prop.attenteId);}
+}
+// Signale les groupes dont la table vient d'être prête (sauf quand la simulation les place toute seule).
+function notifierPrets(){
+  const ids=Object.keys(PRETS);
+  if(UI.pretsConnus&&!(UI.vitesse>0&&UI.autoPlacer)){const nouveaux=ids.filter(id=>!UI.pretsConnus.has(id));const a=nouveaux.length&&S.attente[nouveaux[0]];
+    if(a)toast(`${a.nom||'Un groupe'} (${a.pers} pers.) : table prête, ${libTables(PRETS[nouveaux[0]].tables)}`+(nouveaux.length>1?`, et ${nouveaux.length-1} autre${nouveaux.length>2?'s':''}`:''));}
+  UI.pretsConnus=new Set(ids);
+}
+// Pendant qu'un doigt ou la souris est appuyé, on retarde l'affichage pour ne pas perdre le clic.
+let enfonce=false,differe=false;
+function rendre(){
+  if(enfonce){differe=true;return;}
+  ST=stats();PRETS=calculerPrets();nettoyerUI();notifierPrets();rendreEntete();rendrePlan();rendrePanneau();rendreAttente();
+}
+let toastT;function toast(m){const el=$('#toast');el.textContent=m;el.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>el.hidden=true,3500);}
+
+// ---------- Échanges avec le connecteur Veloce (toutes les 10 secondes) ----------
+function chargerVeloce(){
+  try{const d=JSON.parse(localStorage.getItem(CLE_VELOCE)||'null');if(d){VEL.url=d.url||'';VEL.cle=d.cle||'';VEL.seq=Number(d.seq)||0;}}catch(e){}
+  VEL.saisieUrl=VEL.url||'';VEL.saisieCle=VEL.cle;VEL.etat=VEL.url&&VEL.cle?'connexion':'off';
+}
+function sauverVeloce(){try{localStorage.setItem(CLE_VELOCE,JSON.stringify({url:VEL.url,cle:VEL.cle,seq:VEL.seq}));}catch(e){}}
+async function appelVeloce(chemin,{auth=true,methode='GET',corps}={}){
+  const ctrl=new AbortController();const t=setTimeout(()=>ctrl.abort(),8000);
+  try{
+    const entetes={...(auth?{Authorization:'Bearer '+VEL.cle}:{}),...(corps?{'Content-Type':'application/json'}:{})};
+    const r=await fetch(VEL.url.replace(/\/+$/,'')+chemin,{method:methode,headers:entetes,body:corps?JSON.stringify(corps):undefined,signal:ctrl.signal});
+    if(r.status===401)throw new Error('Le connecteur refuse cette clé d\'accès.');
+    if(!r.ok){const d=await r.json().catch(()=>({}));const e=new Error(d.erreur||'Le connecteur a répondu une erreur ('+r.status+').');e.statut=r.status;throw e;}
+    return await r.json();
+  }catch(e){
+    if(e.name==='AbortError')throw new Error('Le connecteur ne répond pas.');
+    if(e instanceof TypeError)throw new Error('Connecteur injoignable : vérifiez qu\'il tourne, son adresse, et que cette page figure dans ORIGINES_AUTORISEES.');
+    throw e;
+  }finally{clearTimeout(t);}
+}
+// Une table encaissée sur une tablette Veloce : le repas se termine et la table passe « à débarrasser ».
+async function appliquerPaiement(e){
+  const n=Number(e.table);if(!TABLES[n])return;
+  if(Date.now()-(Number(e.fermeture)||0)>30*6e4)return;                                     // paiement trop ancien
+  if((S.sale[n]&&S.sale[n].facture===e.facture)||S.repas.some(r=>r&&r.fv===e.facture))return; // déjà traité (autre appareil)
+  const t=Math.min(maintenant(),Number(e.fermeture)||maintenant());
+  const vid=occupation()[n];
+  // Ne jamais terminer un nouveau repas avec la facture du groupe précédent.
+  // Sans visite correspondante (ou sans ouverture fiable), laisser l'accueil décider.
+  if(!vid||!Number.isFinite(e.ouverture)||!Number.isFinite(e.fermeture)||e.ouverture<S.visites[vid].arrivee||e.fermeture<S.visites[vid].arrivee)return;
+  await payer(vid,{t,source:'veloce',facture:e.facture,total:e.total});
+  VEL.recents=[{table:n,a:t,total:e.total},...VEL.recents].slice(0,5);
+  toast(`Table ${n} payée dans Veloce : à débarrasser`);
+}
+async function sonderVeloce(complet){
+  if(!VEL.url||!VEL.cle||VEL.enCours)return;
+  VEL.enCours=true;
+  try{
+    if(salleConnectee())await lireSalle();
+    const {seq,evenements}=await appelVeloce('/evenements?depuis='+VEL.seq);
+    for(const e of evenements||[])await appliquerPaiement(e);
+    VEL.seq=Number(seq)||0;sauverVeloce();
+    // Liste d'attente en ligne : nouvelles inscriptions et annulations, puis estimations pour les clients.
+    try{const {inscriptions}=await appelVeloce('/attente');VEL.etat='ok';await fusionnerInscriptions(inscriptions||[],'service');PRETS=calculerPrets();await publierEstimations();}catch(e){}
+    if(complet||Date.now()-VEL.infosA>5*6e4){
+      VEL.sante=await appelVeloce('/sante',{auth:false});VEL.durees=await appelVeloce('/durees');VEL.affluence=await appelVeloce('/affluence');VEL.infosA=Date.now();
+    }
+    VEL.etat='ok';VEL.message='';
+  }catch(e){VEL.etat='erreur';VEL.message=e.message||'Connecteur injoignable.';if(salleConnectee())UI.sync='erreur';}
+  finally{VEL.enCours=false;}
+  rendre();
+}
+async function chargerBilanVeloce(){
+  if(VEL.etat!=='ok')return;
+  const d=new Date(maintenant());const date=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  try{VEL.bilan=await appelVeloce('/bilan?date='+date);}catch(e){VEL.bilan={erreur:e.message};}
+  rendre();
+}
+
+// ---------- Événements ----------
+document.addEventListener('pointerdown',()=>{enfonce=true;},true);
+const relacher=()=>{enfonce=false;if(differe){differe=false;setTimeout(rendre,0);}};
+document.addEventListener('pointerup',relacher,true);
+document.addEventListener('pointercancel',relacher,true);
+document.addEventListener('click',async e=>{
+  const t=e.target.closest('#plan .tb');
+  if(t){toucherTable(t.dataset.n?+t.dataset.n:+(S.visites[t.dataset.v]?.tables[0]));return;}
+  const b=e.target.closest('[data-action]');if(!b||b.disabled)return;
+  const f=ACTIONS[b.dataset.action];if(!f)return;
+  if(salleConnectee()&&['sim-service','sim-reset','vitesse','exemple'].includes(b.dataset.action)){toast('Débranchez le connecteur pour utiliser la simulation locale.');return;}
+  try{const r=f(b);rendre();if(r&&r.then){await r;rendre();}}
+  catch(erreur){toast(erreur.message||'Action non enregistrée. Réessayez.');rendre();}
+});
+document.addEventListener('keydown',e=>{const t=e.target.closest&&e.target.closest('#plan .tb');if(t&&(e.key==='Enter'||e.key===' ')){e.preventDefault();t.dispatchEvent(new MouseEvent('click',{bubbles:true}));}});
+document.addEventListener('input',e=>{
+  const el=e.target;
+  if(el.id==='nom'){UI.nom=el.value;if(UI.prop)UI.prop.nom=el.value.trim();return;}
+  if(el.id==='vel-url'){VEL.saisieUrl=el.value;return;}
+  if(el.id==='vel-cle'){VEL.saisieCle=el.value;return;}
+  if(el.dataset.serveur){const s=infoServeur(el.dataset.serveur);if(s){s.nom=el.value.slice(0,40);sauverConfigBientot();}}
+});
+document.addEventListener('change',e=>{
+  const el=e.target;
+  if(el.id==='vue'){UI.vueServeur=el.value||null;UI.panneau='normal';UI.prop=null;UI.manuel=null;UI.selVisite=null;sauverUI();rendre();return;}
+  if(el.id==='auto-placer'){UI.autoPlacer=el.checked;sauverUI();return;}
+  if(el.id==='ecran'){garderEcran(el.checked);return;}
+  if(el.id==='avis-auto'){UI.avisAuto=el.checked;sauverUI();if(el.checked)verifierAvisAuto();return;}
+  if(el.id==='pivot-auto'){UI.pivotAuto=el.checked;sauverUI();if(el.checked)orienterPlan();return;}
+  if(el.dataset.actif){const s=infoServeur(el.dataset.actif);if(s){s.actif=el.checked;sauverConfigBientot();rendre();}}
+});
+// Bulle d'information du graphique du bilan.
+function bulle(c,montrer){
+  const g=c.closest('.graph');if(!g)return;const b=g.querySelector('.bulle');
+  g.querySelectorAll('.bar.survol').forEach(x=>x.classList.remove('survol'));
+  if(!montrer){b.hidden=true;return;}
+  const bar=g.querySelector(`.bar[data-i="${c.dataset.i}"]`);if(bar)bar.classList.add('survol');
+  const k=g.clientWidth/340;b.textContent=c.dataset.info;b.style.left=(parseFloat(c.dataset.x)*k)+'px';b.style.top=(parseFloat(c.dataset.y)*k-8)+'px';b.hidden=false;
+}
+document.addEventListener('pointerover',e=>{const c=e.target.closest&&e.target.closest('.graph .cible');if(c)bulle(c,true);});
+document.addEventListener('pointerout',e=>{const c=e.target.closest&&e.target.closest('.graph .cible');if(c)bulle(c,false);});
+document.addEventListener('focusin',e=>{const c=e.target.closest&&e.target.closest('.graph .cible');if(c)bulle(c,true);});
+document.addEventListener('focusout',e=>{const c=e.target.closest&&e.target.closest('.graph .cible');if(c)bulle(c,false);});
+
+// Déplacer le plan en maintenant le clic (souris, stylet) ou au doigt, et le pincer pour zoomer.
+// Sur tablette en paysage, la page gère elle-même le doigt ; sur téléphone, le défilement natif garde la main
+// (la page doit rester défilable), et seul le pincement est géré ici.
+let glisse=null,bloquerClic=false,dernierZoomMolette=0,pince=null;
+const doigts=new Map();
+const gestesManuels=()=>getComputedStyle(cadre).touchAction==='none';
+cadre.addEventListener('pointerdown',e=>{
+  if(e.pointerType==='touch'){
+    doigts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(doigts.size===2){const [a,b]=[...doigts.values()];pince={d:Math.hypot(a.x-b.x,a.y-b.y)||1};glisse=null;cadre.classList.remove('glisse');return;}
+    if(!gestesManuels())return;
+  }else if(e.button!==0)return;
+  glisse={x:e.clientX,y:e.clientY,l:cadre.scrollLeft,t:cadre.scrollTop,actif:false,id:e.pointerId};
+});
+cadre.addEventListener('pointermove',e=>{
+  if(doigts.has(e.pointerId)){
+    doigts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(pince&&doigts.size===2){
+      const [a,b]=[...doigts.values()];const d=Math.hypot(a.x-b.x,a.y-b.y);const r=d/pince.d;
+      if(r>1.2||r<0.83){changerZoom(r>1?1:-1,(a.x+b.x)/2,(a.y+b.y)/2);pince.d=d;}
+      e.preventDefault();return;
+    }
+  }
+  if(!glisse||e.pointerId!==glisse.id)return;
+  const dx=e.clientX-glisse.x,dy=e.clientY-glisse.y;
+  if(!glisse.actif){
+    if(Math.hypot(dx,dy)<5)return; // en dessous, c'est un simple clic sur une table
+    glisse.actif=true;cadre.classList.add('glisse');
+    try{cadre.setPointerCapture(e.pointerId);}catch(_){}
+  }
+  cadre.scrollLeft=glisse.l-dx;cadre.scrollTop=glisse.t-dy;e.preventDefault();
+});
+function finGlisse(){
+  if(!glisse)return;
+  if(glisse.actif){bloquerClic=true;setTimeout(()=>{bloquerClic=false;},0);} // le relâchement ne doit pas choisir une table
+  cadre.classList.remove('glisse');glisse=null;
+}
+const leverDoigt=e=>{doigts.delete(e.pointerId);if(doigts.size<2)pince=null;finGlisse();};
+cadre.addEventListener('pointerup',leverDoigt);
+cadre.addEventListener('pointercancel',leverDoigt);
+cadre.addEventListener('click',e=>{if(bloquerClic){e.stopPropagation();e.preventDefault();bloquerClic=false;}},true);
+cadre.addEventListener('dragstart',e=>e.preventDefault());
+cadre.addEventListener('wheel',e=>{
+  if(!(e.ctrlKey||e.metaKey))return;
+  e.preventDefault();
+  const now=Date.now();if(now-dernierZoomMolette<120)return;dernierZoomMolette=now;
+  changerZoom(e.deltaY<0?1:-1,e.clientX,e.clientY);
+},{passive:false});
+if(window.ResizeObserver)new ResizeObserver(()=>{appliquerZoom();orienterPlan();}).observe(cadre);
+
+// ---------- Tablette : orientation du plan, écran allumé, installation ----------
+// En paysage, le plan (plus haut que large) est tourné d'un quart de tour quand il y gagne de la place.
+function orienterPlan(){
+  if(UI.pivotAuto===false||!large.matches)return;
+  const cw=cadre.clientWidth,ch=cadre.clientHeight;if(!cw||!ch)return;
+  const tourne=Math.min(cw/H,ch/W)>Math.min(cw/W,ch/H)*1.05;
+  if(tourne!==UI.pivot){UI.pivot=tourne;rendre();}
+}
+let verrouEcran=null;
+async function garderEcran(oui){
+  UI.ecran=oui;sauverUI();
+  if(oui&&!verrouEcran){
+    try{verrouEcran=await navigator.wakeLock.request('screen');verrouEcran.addEventListener('release',()=>{verrouEcran=null;});}
+    catch(e){if(document.visibilityState==='visible'){UI.ecran=false;sauverUI();toast('Cet appareil ne permet pas de garder l\'écran allumé ici.');}}
+  }else if(!oui&&verrouEcran){try{await verrouEcran.release();}catch(e){}verrouEcran=null;}
+  rendre();
+}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&UI.ecran&&!verrouEcran)garderEcran(true);});
+let invitationInstall=null;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();invitationInstall=e;rendre();});
+window.addEventListener('appinstalled',()=>{invitationInstall=null;toast('Plan de salle installé');rendre();});
+const estInstallee=()=>matchMedia('(display-mode: standalone)').matches||matchMedia('(display-mode: fullscreen)').matches||navigator.standalone===true;
+const estIOS=()=>/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+function carteTablette(){
+  const installation=estInstallee()?'<p class="aide">Installée : elle s\'ouvre en plein écran depuis l\'écran d\'accueil, même sans connexion.</p>'
+    :invitationInstall?'<div class="rang"><button class="prim" data-action="installer">Installer sur cette tablette</button></div>'
+    :dansClaude()?'<p class="aide">Pour l\'installer, ouvrez le lien GitHub de la démo dans le navigateur de la tablette.</p>'
+    :estIOS()?'<p class="aide">Sur iPad, dans Safari : touchez le bouton Partager, puis « Sur l\'écran d\'accueil ».</p>'
+    :'<p class="aide">Dans le menu du navigateur, choisissez « Installer l\'application » ou « Ajouter à l\'écran d\'accueil ».</p>';
+  return `<section class="carte"><div class="tete"><h2>Cette tablette</h2></div>${installation}
+  ${'wakeLock' in navigator?`<label class="bascule"><input type="checkbox" id="ecran" ${UI.ecran?'checked':''}>Garder l'écran allumé pendant le service</label>`:''}
+  <label class="bascule"><input type="checkbox" id="pivot-auto" ${UI.pivotAuto!==false?'checked':''}>Tourner le plan selon l'orientation de la tablette</label>
+  <p class="aide">Glissez le plan avec un doigt, pincez avec deux doigts pour zoomer.</p></section>`;
+}
+
+// Code QR plein écran : Échap le ferme. Une inscription faite sur cet appareil (démonstration) arrive aussitôt.
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#qr-plein').hidden)ACTIONS['qr-fermer']();});
+window.addEventListener('storage',e=>{if(e.key===CLE_INSCR)importerInscriptionsDemo();});
+
+// ---------- Démarrage ----------
+chargerLocal();
+chargerVeloce();
+if(!large.matches&&UI.zoom===1&&innerWidth<700)UI.zoom=2;
+ST=stats();rendre();
+importerInscriptionsDemo();
+requestAnimationFrame(orienterPlan);
+if(UI.ecran&&'wakeLock' in navigator)garderEcran(true);
+// Hors connexion et installation : seulement sur la page publiée en HTTPS (pas dans la page Claude).
+if('serviceWorker' in navigator&&location.protocol==='https:'&&!dansClaude()&&document.querySelector('link[rel="manifest"]'))navigator.serviceWorker.register('sw.js').catch(()=>{});
+setInterval(tick,1000);
+setInterval(()=>sonderVeloce(false),10000);
+sonderVeloce(true);
+large.addEventListener('change',rendre);
+
+(async()=>{
+  const c=window.claude;
+  let db=null,user=null,ecriture=null;
+  if(c&&c.use){try{[db,user]=await Promise.all([c.use('db'),c.use('user')]);}catch(e){}}
+  if(user){try{ecriture=await user.can('data.write');}catch(e){}}
+  // Sans base, ou sans droit d'écriture sur le plan partagé : démo sur cet appareil.
+  if(!db||ecriture===false){UI.sync=salleConnectee()?'connexion':'local';rendre();return;}
+  store.db=db;decalage=0;UI.vitesse=0;
+  S.config=clone(CONFIG_DEFAUT);S.prochain=null;S.visites={};S.attente={};S.repas=[];S.sale={};rendre();
+  const t=setTimeout(()=>{if(UI.sync==='connexion'){UI.sync='lent';rendre();}},10000);
+  const recu=s=>{if(!s.metadata.fromCache&&UI.sync!=='erreur'){clearTimeout(t);UI.sync='direct';}};
+  const erreur=e=>{clearTimeout(t);UI.sync='erreur';rendre();};
+  abonnements.push(
+    db.doc('salle/config').onSnapshot(s=>{recu(s);if(!UI.configSale)S.config=normaliserConfig(s.exists?s.data():null);rendre();},erreur),
+    db.doc('salle/rotation').onSnapshot(s=>{recu(s);S.prochain=s.exists?(s.data().prochain||null):null;rendre();},erreur),
+    db.doc('salle/historique').onSnapshot(s=>{recu(s);const r=s.exists?s.data().repas:null;S.repas=Array.isArray(r)?r.filter(x=>x&&Number.isFinite(x.p)&&Number.isFinite(x.d)):[];rendre();},erreur),
+    db.collection('visites').onSnapshot(q=>{recu(q);const v={};q.docs.forEach(d=>{const x=d.data();if(visiteValide(x))v[d.id]=x;});S.visites=v;rendre();},erreur),
+    db.collection('attente').onSnapshot(q=>{recu(q);const a={};q.docs.forEach(d=>{a[d.id]=d.data();});S.attente=a;rendre();},erreur),
+    db.doc('salle/debarrasser').onSnapshot(s=>{recu(s);const t=s.exists?s.data().tables:null;S.sale=t&&typeof t==='object'?clone(t):{};rendre();},erreur));
+})();
+</script>
+</body>
+</html>

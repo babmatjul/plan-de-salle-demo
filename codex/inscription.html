@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#1d3a2a">
+<title>Liste d'attente</title>
+<link rel="icon" type="image/png" sizes="192x192" href="icone-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap">
+<style>
+/* Formulaire ouvert par le code QR, sur le téléphone du client : une colonne, gros champs, peu de texte. */
+:root{
+  --bg:#eef1ea; --surface:#ffffff; --surface-2:#e4eadf; --fg:#18231c; --muted:#58675c; --line:#d2dacc;
+  --vert:#1f4a33; --vert-texte:#ffffff; --jaune:#f3b61f; --jaune-texte:#2a1f00; --blanc-oeuf:#fbfaf5;
+  --bande:#1d3a2a; --bande-texte:#f4f7f1; --bande-doux:#b7cabb; --danger:#b91c1c; --focus:#2f6fd6;
+  --f-texte:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-marque:"Bricolage Grotesque","Barlow",system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e1511; --surface:#16201a; --surface-2:#1f2b23; --fg:#e7efe8; --muted:#9db0a2; --line:#2b3a30;
+  --vert:#4aa874; --vert-texte:#0e1511; --jaune:#f5c542; --jaune-texte:#241a00;
+  --bande:#132a1d; --bande-texte:#eef5ef; --bande-doux:#9fb8a6; --danger:#f87171; --focus:#60a5fa; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1511; --surface:#16201a; --surface-2:#1f2b23; --fg:#e7efe8; --muted:#9db0a2; --line:#2b3a30;
+  --vert:#4aa874; --vert-texte:#0e1511; --jaune:#f5c542; --jaune-texte:#241a00;
+  --bande:#132a1d; --bande-texte:#eef5ef; --bande-doux:#9fb8a6; --danger:#f87171; --focus:#60a5fa; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;background:var(--bg);color:var(--fg);font:400 17px/1.45 var(--f-texte);-webkit-font-smoothing:antialiased}
+.page{max-width:480px;margin:0 auto;padding-block:16px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:14px}
+.bande{background:var(--bande);color:var(--bande-texte);border-radius:18px;padding:16px 18px;display:flex;align-items:center;gap:14px}
+.oeuf{position:relative;flex:none;width:44px;height:36px;background:var(--blanc-oeuf);border-radius:58% 42% 52% 48% / 55% 60% 40% 45%;transform:rotate(-8deg)}
+.oeuf::after{content:"";position:absolute;width:16px;height:16px;left:13px;top:9px;border-radius:50%;background:var(--jaune)}
+h1{font:700 26px/1.1 var(--f-marque);margin:0;letter-spacing:-.015em}
+.bande p{margin:3px 0 0;color:var(--bande-doux);font-size:15px}
+.carte{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:14px}
+.demo{background:color-mix(in srgb,var(--jaune) 22%,var(--surface));border-color:color-mix(in srgb,var(--jaune) 60%,var(--line));font-size:15px}
+label.champ{display:flex;flex-direction:column;gap:6px;font-weight:500}
+label.champ small{font-weight:400;color:var(--muted);font-size:14px}
+input[type=text],input[type=tel],input[type=email]{font:400 18px var(--f-texte);color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px 14px;min-height:50px;width:100%}
+input:focus-visible,button:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.erreur{color:var(--danger);font-size:14px;font-weight:500;min-height:0}
+.deux{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.pers{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.pers .stepper{display:flex;align-items:center;gap:10px}
+.pers output{min-width:40px;text-align:center;font:700 28px/1 var(--f-marque)}
+button{font:600 17px/1.2 var(--f-texte);border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--fg);min-height:50px;padding:10px 16px;cursor:pointer;touch-action:manipulation}
+.rond{width:50px;padding:0;font-size:24px}
+.prim{background:var(--vert);color:var(--vert-texte);border-color:var(--vert);width:100%;font-size:19px;min-height:56px}
+.lien{border:0;background:none;color:var(--muted);text-decoration:underline;min-height:44px}
+.case{display:flex;gap:12px;align-items:flex-start;font-size:16px}
+.case input{width:24px;height:24px;margin:1px 0 0;flex:none;accent-color:var(--vert)}
+.choix{display:flex;gap:10px;flex-wrap:wrap;padding-left:36px}
+.choix label{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:12px;padding:10px 14px;min-height:48px;font-weight:500}
+.choix input{width:22px;height:22px;accent-color:var(--vert)}
+.petit{font-size:14px;color:var(--muted);margin:0}
+.statut{align-items:center;text-align:center}
+.grand{font:700 56px/1 var(--f-marque);margin:0;color:var(--vert)}
+.statut h2{font:700 28px/1.15 var(--f-marque);margin:0}
+.statut p{margin:0}
+.pastille{display:inline-block;background:var(--jaune);color:var(--jaune-texte);border-radius:999px;padding:6px 14px;font-weight:600}
+@media (max-width:360px){.deux{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main class="page">
+  <header class="bande"><span class="oeuf" aria-hidden="true"></span><div><h1>Liste d'attente</h1><p>Nous vous gardons votre place</p></div></header>
+
+  <section class="carte demo" id="demo" hidden>
+    <b>Démonstration</b>
+    <span>Le restaurant n'a pas encore branché son serveur : l'inscription reste sur cet appareil. N'entrez pas de vraies coordonnées.</span>
+  </section>
+
+  <form class="carte" id="formulaire" novalidate>
+    <div class="deux">
+      <label class="champ" for="prenom">Prénom<input id="prenom" type="text" autocomplete="given-name" required maxlength="40"></label>
+      <label class="champ" for="nom">Nom<input id="nom" type="text" autocomplete="family-name" maxlength="40"></label>
+    </div>
+    <div class="erreur" id="e-prenom" role="alert"></div>
+    <div class="pers">
+      <span><b>Nombre de personnes</b></span>
+      <div class="stepper"><button type="button" class="rond" id="moins" aria-label="Une personne de moins">−</button><output id="personnes" aria-live="polite">2</output><button type="button" class="rond" id="plus" aria-label="Une personne de plus">+</button></div>
+    </div>
+    <div class="erreur" id="e-personnes" role="alert"></div>
+    <label class="champ" for="telephone">Téléphone<input id="telephone" type="tel" inputmode="tel" autocomplete="tel" placeholder="418 555-0123" maxlength="20"><small>Pour recevoir un texto</small></label>
+    <div class="erreur" id="e-telephone" role="alert"></div>
+    <label class="champ" for="courriel">Courriel<input id="courriel" type="email" inputmode="email" autocomplete="email" placeholder="vous@exemple.com" maxlength="120"></label>
+    <div class="erreur" id="e-courriel" role="alert"></div>
+    <label class="case"><input type="checkbox" id="prevenir"><span><b>Me prévenir quand ma table sera bientôt prête</b><br><span class="petit">Vous pouvez vous éloigner et revenir un peu plus tard.</span></span></label>
+    <div class="choix" id="choix" hidden>
+      <label><input type="checkbox" id="par-texto">Par texto</label>
+      <label><input type="checkbox" id="par-courriel">Par courriel</label>
+    </div>
+    <label class="case" id="bloc-accord" hidden><input type="checkbox" id="accord"><span class="petit">J'accepte que le restaurant utilise mes coordonnées seulement pour gérer ma place dans la liste d'attente et me prévenir. Elles sont effacées le jour même.</span></label>
+    <div class="erreur" id="e-consentement" role="alert"></div>
+    <button type="submit" class="prim" id="envoyer">M'inscrire</button>
+    <div class="erreur" id="e-general" role="alert"></div>
+  </form>
+
+  <section class="carte statut" id="statut" hidden aria-live="polite"></section>
+</main>
+<script>
+// ---------- Où envoyer l'inscription ----------
+// ?s=<adresse du connecteur> : inscription envoyée au restaurant. Sans paramètre : démonstration sur cet appareil.
+const SERVICE=(new URLSearchParams(location.search).get('s')||'').replace(/\/+$/,'');
+const DEMO=!/^https?:\/\//.test(SERVICE);
+const CLE_MIENNE='plan-salle-codex-mon-inscription-v1',CLE_DEMO='plan-salle-codex-inscriptions-v1',CLE_EST='plan-salle-codex-estimations-v1';
+const $=s=>document.querySelector(s);
+const lire=(k,d)=>{try{return JSON.parse(localStorage.getItem(k)||'null')??d;}catch(e){return d;}};
+const ecrire=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}};
+$('#demo').hidden=!DEMO;
+
+// ---------- Formulaire ----------
+let personnes=2;
+const majPersonnes=()=>{$('#personnes').textContent=personnes;};
+$('#moins').onclick=()=>{personnes=Math.max(1,personnes-1);majPersonnes();};
+$('#plus').onclick=()=>{personnes=Math.min(20,personnes+1);majPersonnes();};
+function majOptions(){
+  const p=$('#prevenir').checked;$('#choix').hidden=!p;
+  if(p&&!$('#par-texto').checked&&!$('#par-courriel').checked){if($('#telephone').value.trim())$('#par-texto').checked=true;else if($('#courriel').value.trim())$('#par-courriel').checked=true;else $('#par-texto').checked=true;}
+  $('#bloc-accord').hidden=!($('#telephone').value.trim()||$('#courriel').value.trim());
+}
+['#prevenir','#telephone','#courriel','#par-texto','#par-courriel'].forEach(s=>$(s).addEventListener('input',majOptions));
+document.querySelectorAll('input').forEach(i=>i.addEventListener('input',()=>{const e=$('#e-'+(i.id==='accord'?'consentement':i.id));if(e)e.textContent='';$('#e-general').textContent='';}));
+
+const telephoneNormalise=v=>{const c=String(v||'').replace(/\D/g,'');const d=c.length===11&&c[0]==='1'?c.slice(1):c;return d.length===10?'+1'+d:null;};
+function verifier(d){
+  const e={};
+  if(!d.prenom)e.prenom='Indiquez votre prénom.';
+  if(d.telephone&&!telephoneNormalise(d.telephone))e.telephone='Numéro à 10 chiffres, par exemple 418 555-0123.';
+  if(d.courriel&&!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(d.courriel))e.courriel='Adresse courriel incomplète.';
+  if(d.prevenir.texto&&!d.telephone&&!e.telephone)e.telephone='Indiquez votre numéro pour recevoir un texto.';
+  if(d.prevenir.courriel&&!d.courriel&&!e.courriel)e.courriel='Indiquez votre courriel pour être prévenu par courriel.';
+  if((d.telephone||d.courriel)&&!d.consentement)e.consentement='Cochez la case pour que nous puissions utiliser vos coordonnées.';
+  return e;
+}
+function afficherErreurs(e){
+  for(const k of ['prenom','personnes','telephone','courriel','consentement'])$('#e-'+k).textContent=e[k]||'';
+  const premier=Object.keys(e)[0];if(premier){const champ=$('#'+(premier==='consentement'?'accord':premier));if(champ&&champ.focus)champ.focus();}
+}
+$('#formulaire').addEventListener('submit',async ev=>{
+  ev.preventDefault();
+  const p=$('#prevenir').checked;
+  const d={prenom:$('#prenom').value.trim(),nom:$('#nom').value.trim(),personnes,telephone:$('#telephone').value.trim(),courriel:$('#courriel').value.trim(),
+    prevenir:{texto:p&&$('#par-texto').checked,courriel:p&&$('#par-courriel').checked},consentement:$('#accord').checked};
+  const e=verifier(d);afficherErreurs(e);if(Object.keys(e).length)return;
+  const bouton=$('#envoyer');bouton.disabled=true;bouton.textContent='Inscription…';
+  try{
+    let mienne;
+    if(DEMO){
+      const id='d'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),jeton=Math.random().toString(36).slice(2);
+      const liste=lire(CLE_DEMO,[]);liste.push({...d,telephone:telephoneNormalise(d.telephone),id,jeton,ajout:Date.now(),statut:'attente'});ecrire(CLE_DEMO,liste);
+      mienne={id,jeton,service:''};
+    }else{
+      const r=await fetch(SERVICE+'/public/inscription',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});
+      const rep=await r.json().catch(()=>({}));
+      if(r.status===400&&rep.champs){afficherErreurs(rep.champs);return;}
+      if(!r.ok)throw new Error(rep.erreur||'L\'inscription n\'a pas pu être envoyée.');
+      mienne={id:rep.id,jeton:rep.jeton,service:SERVICE};
+    }
+    ecrire(CLE_MIENNE,{...mienne,prenom:d.prenom,personnes,prevenir:d.prevenir,telephone:d.telephone,courriel:d.courriel});
+    await afficherStatut();
+  }catch(err){$('#e-general').textContent=(err&&err.message&&!/fetch/i.test(err.message)?err.message:'Connexion impossible. Réessayez, ou adressez-vous à l\'accueil.');}
+  finally{bouton.disabled=false;bouton.textContent='M\'inscrire';}
+});
+
+// ---------- Suivi de l'inscription ----------
+const fin4=v=>v?String(v).replace(/\D/g,'').slice(-4):'';
+async function lireStatut(m){
+  if(!m.service){
+    const i=lire(CLE_DEMO,[]).find(x=>x.id===m.id);if(!i)return null;
+    const est=lire(CLE_EST,{})[m.id]||{};
+    const actives=lire(CLE_DEMO,[]).filter(x=>x.statut==='attente');
+    return{statut:est.statut||i.statut,position:est.position??(actives.findIndex(x=>x.id===m.id)+1||null),minutes:est.minutes??null,prete:!!est.prete,prevenu:est.prevenu||[]};
+  }
+  const r=await fetch(`${m.service}/public/inscription/${encodeURIComponent(m.id)}?jeton=${encodeURIComponent(m.jeton)}`);
+  if(r.status===404)return null;if(!r.ok)throw new Error('indisponible');
+  return r.json();
+}
+async function afficherStatut(){
+  const m=lire(CLE_MIENNE,null);if(!m){$('#formulaire').hidden=false;$('#statut').hidden=true;return;}
+  let s;try{s=await lireStatut(m);}catch(e){s={statut:'inconnu'};}
+  $('#formulaire').hidden=true;const z=$('#statut');z.hidden=false;
+  const avis=m.prevenir&&(m.prevenir.texto||m.prevenir.courriel)?`Nous vous préviendrons ${m.prevenir.texto?`par texto au •••-${fin4(m.telephone)}`:''}${m.prevenir.texto&&m.prevenir.courriel?' et ':''}${m.prevenir.courriel?'par courriel':''} quand votre table sera bientôt prête : vous pouvez vous éloigner.`:'Restez près de l\'accueil : nous vous appellerons.';
+  if(!s||s.statut==='retire'||s.statut==='annule'){
+    z.innerHTML=`<h2>Inscription terminée</h2><p>Vous n'êtes plus dans la liste d'attente.</p><button class="prim" id="nouvelle">Nouvelle inscription</button>`;
+  }else if(s.statut==='assis'){
+    z.innerHTML=`<h2>Bon appétit, ${esc(m.prenom)} !</h2><p>Vous êtes à table.</p><button class="lien" id="nouvelle">Nouvelle inscription</button>`;
+  }else if(s.prete){
+    z.innerHTML=`<span class="pastille">Votre table est prête</span><h2>${esc(m.prenom)}, présentez-vous à l'accueil.</h2><button class="lien" id="annuler">Je ne viens plus</button>`;
+  }else{
+    const pos=s.position?`<p class="grand">${s.position}<sup style="font-size:.45em">${s.position===1?'er':'e'}</sup></p><p>dans la liste d'attente · ${m.personnes} pers.</p>`:'<h2>Vous êtes inscrit</h2>';
+    const att=s.minutes!=null?`<p><b>Attente estimée : ${s.minutes<=1?'moins d\'une minute':`~${s.minutes} min`}</b></p>`:'<p class="petit">L\'accueil estime votre attente…</p>';
+    z.innerHTML=`<h2>Merci, ${esc(m.prenom)} !</h2>${pos}${att}<p class="petit">${avis}</p>${s.statut==='inconnu'?'<p class="petit">Connexion au restaurant interrompue, nouvel essai dans quelques secondes.</p>':''}<button class="lien" id="annuler">Je ne viens plus</button>`;
+  }
+  const a=$('#annuler');if(a)a.onclick=annuler;
+  const n=$('#nouvelle');if(n)n.onclick=()=>{try{localStorage.removeItem(CLE_MIENNE);}catch(e){}afficherStatut();};
+}
+async function annuler(){
+  const m=lire(CLE_MIENNE,null);if(!m)return;
+  if(!m.service){const l=lire(CLE_DEMO,[]);const i=l.find(x=>x.id===m.id);if(i){i.statut='annule';ecrire(CLE_DEMO,l);}const est=lire(CLE_EST,{});if(est[m.id]){est[m.id].statut='annule';ecrire(CLE_EST,est);}}
+  else{try{await fetch(`${m.service}/public/inscription/${encodeURIComponent(m.id)}?jeton=${encodeURIComponent(m.jeton)}`,{method:'DELETE'});}catch(e){}}
+  afficherStatut();
+}
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+afficherStatut();
+setInterval(()=>{if(!$('#statut').hidden)afficherStatut();},15000);
+window.addEventListener('storage',()=>{if(!$('#statut').hidden)afficherStatut();});
+</script>
+</body>
+</html>
