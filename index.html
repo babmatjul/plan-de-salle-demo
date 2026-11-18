@@ -5,6 +5,14 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex">
 <meta name="description" content="Plan de salle interactif : attribution des tables par rotation des serveurs et prévision des tables libres.">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1d3a2a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Plan de salle">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="apple-touch-icon" href="icone-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icone-192.png">
 <title>Plan de salle Beauport</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -105,7 +113,9 @@ button[disabled]{opacity:.55;cursor:default}
 .lg-ferme{background:var(--surface-2);border:2px dashed var(--line)}
 .cadre{display:flex;background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:auto;max-height:76vh;overscroll-behavior:contain;box-shadow:var(--ombre)}
 .cadre svg{display:block;flex:none;margin:auto}
-#plan{user-select:none;-webkit-user-select:none}
+#plan{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.cadre{touch-action:pan-x pan-y} /* téléphone : défilement natif ; le pincement est géré par la page */
+button,select,input{touch-action:manipulation}
 .cadre.peut-glisser{cursor:grab}
 .cadre.glisse,.cadre.glisse #plan .tb{cursor:grabbing}
 .carte{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:15px;display:flex;flex-direction:column;gap:10px;min-width:0;box-shadow:var(--ombre)}
@@ -216,7 +226,13 @@ input[type=text],input[type=password],input[type=url]{font:400 15px var(--f-text
   .corps{flex:1;min-height:0;grid-template-columns:minmax(0,1fr) 384px;grid-template-areas:"plan cote"}
   .cote{display:flex;flex-direction:column;gap:12px;grid-area:cote;overflow:auto;min-height:0;padding-right:2px}
   .zone-plan{min-height:0}
-  .cadre{flex:1;min-height:0;max-height:none}
+  .cadre{flex:1;min-height:0;max-height:none;touch-action:none} /* tablette en paysage : glisser et pincer gérés par la page */
+  html,body{overscroll-behavior:none}
+}
+/* Tablette en portrait : les cartes se rangent sur deux colonnes sous le plan. */
+@media (min-width:700px) and (max-width:999px){
+  #haut,#bas{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}
+  .cadre{max-height:62vh}
 }
 @media (max-width:520px){
   .tailles{grid-template-columns:repeat(4,minmax(0,1fr))}
@@ -312,7 +328,7 @@ const S={config:clone(CONFIG_DEFAUT),prochain:null,visites:{},attente:{},repas:[
 let decalage=0;                                  // avance de l'horloge simulée sur l'heure réelle (ms)
 const maintenant=()=>Date.now()+decalage;
 const UI={n:2,nom:'',prop:null,manuel:null,manuelAttente:null,selVisite:null,panneau:'normal',vueServeur:null,pinceau:'s1',zoom:1,pivot:false,
-  sync:'connexion',confirmFin:0,confirmHisto:0,chargement:false,configSale:false,vitesse:0,autoPlacer:true,simT:null,pretsConnus:null,selSale:null};
+  sync:'connexion',confirmFin:0,confirmHisto:0,chargement:false,configSale:false,vitesse:0,autoPlacer:true,simT:null,pretsConnus:null,selSale:null,pivotAuto:true,ecran:false};
 let ST=null,PRETS={};
 // Connexion à la caisse Veloce, par le connecteur (dossier veloce/ du projet). Réglée et gardée sur cet appareil.
 const CLE_VELOCE='plan-salle-veloce-v1',PLACES=160;
@@ -437,10 +453,10 @@ function occSansReserves(saufId){const occ=occupees();for(const [id,c] of Object
 const CLE='plan-salle-v1',CLE_UI='plan-salle-ui-v1';
 function chargerLocal(){
   try{const d=JSON.parse(localStorage.getItem(CLE)||'null');if(d){S.config=normaliserConfig(d.config);S.prochain=d.prochain||null;S.visites=Object.fromEntries(Object.entries(d.visites||{}).filter(([,v])=>visiteValide(v)));S.attente=d.attente&&typeof d.attente==='object'?d.attente:{};S.repas=Array.isArray(d.repas)?d.repas:[];S.sale=d.sale&&typeof d.sale==='object'?d.sale:{};decalage=Number.isFinite(d.decalage)?d.decalage:0;}}catch(e){}
-  try{const u=JSON.parse(localStorage.getItem(CLE_UI)||'null');if(u){UI.pivot=!!u.pivot;if(ZOOMS.includes(u.zoom))UI.zoom=u.zoom;UI.vueServeur=u.vueServeur||null;UI.autoPlacer=u.autoPlacer!==false;}}catch(e){}
+  try{const u=JSON.parse(localStorage.getItem(CLE_UI)||'null');if(u){UI.pivot=!!u.pivot;if(ZOOMS.includes(u.zoom))UI.zoom=u.zoom;UI.vueServeur=u.vueServeur||null;UI.autoPlacer=u.autoPlacer!==false;UI.pivotAuto=u.pivotAuto!==false;UI.ecran=!!u.ecran;}}catch(e){}
 }
 function sauverLocal(){if(store.db)return;try{localStorage.setItem(CLE,JSON.stringify({config:S.config,prochain:S.prochain,visites:S.visites,attente:S.attente,repas:S.repas,sale:S.sale,decalage}));}catch(e){}}
-function sauverUI(){try{localStorage.setItem(CLE_UI,JSON.stringify({pivot:UI.pivot,zoom:UI.zoom,vueServeur:UI.vueServeur,autoPlacer:UI.autoPlacer}));}catch(e){}}
+function sauverUI(){try{localStorage.setItem(CLE_UI,JSON.stringify({pivot:UI.pivot,zoom:UI.zoom,vueServeur:UI.vueServeur,autoPlacer:UI.autoPlacer,pivotAuto:UI.pivotAuto,ecran:UI.ecran}));}catch(e){}}
 const files={};
 function ecrire(cle,fn){const p=(files[cle]||Promise.resolve()).then(()=>essayer(fn));files[cle]=p;return p;}
 async function essayer(fn){
@@ -669,7 +685,8 @@ const ACTIONS={
     S.config.serveurs.pop();if(UI.pinceau===d.id)UI.pinceau=p;sauverConfigBientot();},
   origine:()=>{['s1','s2','s3'].forEach((id,i)=>{if(!infoServeur(id))S.config.serveurs.splice(i,0,{id,nom:'Serveur '+(i+1),actif:true});});S.config.affectation=sectionsOrigine();sauverConfigBientot();},
   'zoom-moins':()=>changerZoom(-1),'zoom-plus':()=>changerZoom(1),'zoom-ajuster':()=>{UI.zoom=1;sauverUI();appliquerZoom();},
-  pivot:()=>{UI.pivot=!UI.pivot;sauverUI();}
+  pivot:()=>{UI.pivot=!UI.pivot;UI.pivotAuto=false;sauverUI();},
+  installer:async()=>{if(!invitationInstall)return;invitationInstall.prompt();try{await invitationInstall.userChoice;}catch(e){}invitationInstall=null;}
 };
 // Zoom par paliers réguliers, qui garde sous le curseur (ou au centre du cadre) le même point du plan.
 function changerZoom(d,px,py){
@@ -1007,7 +1024,7 @@ function rendrePanneau(){
   const act=document.activeElement;const fid=act&&act.id;const sel=fid&&act.selectionStart!=null?[act.selectionStart,act.selectionEnd]:null;
   let haut='',bas='';const vides=!Object.keys(S.visites).length;
   const fiche=UI.selSale&&S.sale[UI.selSale]?carteSale(UI.selSale):UI.selVisite&&S.visites[UI.selVisite]?carteVisite(UI.selVisite):'';
-  if(UI.panneau==='sections')haut=carteSections();
+  if(UI.panneau==='sections')haut=carteSections()+carteTablette();
   else if(UI.panneau==='bilan')haut=carteBilan();
   else if(UI.panneau==='veloce')haut=carteVeloce();
   else if(vueServeur()){
@@ -1124,6 +1141,8 @@ document.addEventListener('change',e=>{
   const el=e.target;
   if(el.id==='vue'){UI.vueServeur=el.value||null;UI.panneau='normal';UI.prop=null;UI.manuel=null;UI.selVisite=null;sauverUI();rendre();return;}
   if(el.id==='auto-placer'){UI.autoPlacer=el.checked;sauverUI();return;}
+  if(el.id==='ecran'){garderEcran(el.checked);return;}
+  if(el.id==='pivot-auto'){UI.pivotAuto=el.checked;sauverUI();if(el.checked)orienterPlan();return;}
   if(el.dataset.actif){const s=infoServeur(el.dataset.actif);if(s){s.actif=el.checked;sauverConfigBientot();rendre();}}
 });
 // Bulle d'information du graphique du bilan.
@@ -1139,13 +1158,29 @@ document.addEventListener('pointerout',e=>{const c=e.target.closest&&e.target.cl
 document.addEventListener('focusin',e=>{const c=e.target.closest&&e.target.closest('.graph .cible');if(c)bulle(c,true);});
 document.addEventListener('focusout',e=>{const c=e.target.closest&&e.target.closest('.graph .cible');if(c)bulle(c,false);});
 
-// Déplacer le plan en maintenant le clic (souris, stylet) ; au doigt, le défilement natif s'en charge.
-let glisse=null,bloquerClic=false,dernierZoomMolette=0;
+// Déplacer le plan en maintenant le clic (souris, stylet) ou au doigt, et le pincer pour zoomer.
+// Sur tablette en paysage, la page gère elle-même le doigt ; sur téléphone, le défilement natif garde la main
+// (la page doit rester défilable), et seul le pincement est géré ici.
+let glisse=null,bloquerClic=false,dernierZoomMolette=0,pince=null;
+const doigts=new Map();
+const gestesManuels=()=>getComputedStyle(cadre).touchAction==='none';
 cadre.addEventListener('pointerdown',e=>{
-  if(e.pointerType==='touch'||e.button!==0)return;
+  if(e.pointerType==='touch'){
+    doigts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(doigts.size===2){const [a,b]=[...doigts.values()];pince={d:Math.hypot(a.x-b.x,a.y-b.y)||1};glisse=null;cadre.classList.remove('glisse');return;}
+    if(!gestesManuels())return;
+  }else if(e.button!==0)return;
   glisse={x:e.clientX,y:e.clientY,l:cadre.scrollLeft,t:cadre.scrollTop,actif:false,id:e.pointerId};
 });
 cadre.addEventListener('pointermove',e=>{
+  if(doigts.has(e.pointerId)){
+    doigts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(pince&&doigts.size===2){
+      const [a,b]=[...doigts.values()];const d=Math.hypot(a.x-b.x,a.y-b.y);const r=d/pince.d;
+      if(r>1.2||r<0.83){changerZoom(r>1?1:-1,(a.x+b.x)/2,(a.y+b.y)/2);pince.d=d;}
+      e.preventDefault();return;
+    }
+  }
   if(!glisse||e.pointerId!==glisse.id)return;
   const dx=e.clientX-glisse.x,dy=e.clientY-glisse.y;
   if(!glisse.actif){
@@ -1160,8 +1195,9 @@ function finGlisse(){
   if(glisse.actif){bloquerClic=true;setTimeout(()=>{bloquerClic=false;},0);} // le relâchement ne doit pas choisir une table
   cadre.classList.remove('glisse');glisse=null;
 }
-cadre.addEventListener('pointerup',finGlisse);
-cadre.addEventListener('pointercancel',finGlisse);
+const leverDoigt=e=>{doigts.delete(e.pointerId);if(doigts.size<2)pince=null;finGlisse();};
+cadre.addEventListener('pointerup',leverDoigt);
+cadre.addEventListener('pointercancel',leverDoigt);
 cadre.addEventListener('click',e=>{if(bloquerClic){e.stopPropagation();e.preventDefault();bloquerClic=false;}},true);
 cadre.addEventListener('dragstart',e=>e.preventDefault());
 cadre.addEventListener('wheel',e=>{
@@ -1170,13 +1206,52 @@ cadre.addEventListener('wheel',e=>{
   const now=Date.now();if(now-dernierZoomMolette<120)return;dernierZoomMolette=now;
   changerZoom(e.deltaY<0?1:-1,e.clientX,e.clientY);
 },{passive:false});
-if(window.ResizeObserver)new ResizeObserver(()=>appliquerZoom()).observe(cadre);
+if(window.ResizeObserver)new ResizeObserver(()=>{appliquerZoom();orienterPlan();}).observe(cadre);
+
+// ---------- Tablette : orientation du plan, écran allumé, installation ----------
+// En paysage, le plan (plus haut que large) est tourné d'un quart de tour quand il y gagne de la place.
+function orienterPlan(){
+  if(UI.pivotAuto===false||!large.matches)return;
+  const cw=cadre.clientWidth,ch=cadre.clientHeight;if(!cw||!ch)return;
+  const tourne=Math.min(cw/H,ch/W)>Math.min(cw/W,ch/H)*1.05;
+  if(tourne!==UI.pivot){UI.pivot=tourne;rendre();}
+}
+let verrouEcran=null;
+async function garderEcran(oui){
+  UI.ecran=oui;sauverUI();
+  if(oui&&!verrouEcran){
+    try{verrouEcran=await navigator.wakeLock.request('screen');verrouEcran.addEventListener('release',()=>{verrouEcran=null;});}
+    catch(e){if(document.visibilityState==='visible'){UI.ecran=false;sauverUI();toast('Cet appareil ne permet pas de garder l\'écran allumé ici.');}}
+  }else if(!oui&&verrouEcran){try{await verrouEcran.release();}catch(e){}verrouEcran=null;}
+  rendre();
+}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&UI.ecran&&!verrouEcran)garderEcran(true);});
+let invitationInstall=null;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();invitationInstall=e;rendre();});
+window.addEventListener('appinstalled',()=>{invitationInstall=null;toast('Plan de salle installé');rendre();});
+const estInstallee=()=>matchMedia('(display-mode: standalone)').matches||matchMedia('(display-mode: fullscreen)').matches||navigator.standalone===true;
+const estIOS=()=>/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+function carteTablette(){
+  const installation=estInstallee()?'<p class="aide">Installée : elle s\'ouvre en plein écran depuis l\'écran d\'accueil, même sans connexion.</p>'
+    :invitationInstall?'<div class="rang"><button class="prim" data-action="installer">Installer sur cette tablette</button></div>'
+    :dansClaude()?'<p class="aide">Pour l\'installer, ouvrez le lien GitHub de la démo dans le navigateur de la tablette.</p>'
+    :estIOS()?'<p class="aide">Sur iPad, dans Safari : touchez le bouton Partager, puis « Sur l\'écran d\'accueil ».</p>'
+    :'<p class="aide">Dans le menu du navigateur, choisissez « Installer l\'application » ou « Ajouter à l\'écran d\'accueil ».</p>';
+  return `<section class="carte"><div class="tete"><h2>Cette tablette</h2></div>${installation}
+  ${'wakeLock' in navigator?`<label class="bascule"><input type="checkbox" id="ecran" ${UI.ecran?'checked':''}>Garder l'écran allumé pendant le service</label>`:''}
+  <label class="bascule"><input type="checkbox" id="pivot-auto" ${UI.pivotAuto!==false?'checked':''}>Tourner le plan selon l'orientation de la tablette</label>
+  <p class="aide">Glissez le plan avec un doigt, pincez avec deux doigts pour zoomer.</p></section>`;
+}
 
 // ---------- Démarrage ----------
 chargerLocal();
 chargerVeloce();
-if(!large.matches&&UI.zoom===1)UI.zoom=2;
+if(!large.matches&&UI.zoom===1&&innerWidth<700)UI.zoom=2;
 ST=stats();rendre();
+requestAnimationFrame(orienterPlan);
+if(UI.ecran&&'wakeLock' in navigator)garderEcran(true);
+// Hors connexion et installation : seulement sur la page publiée en HTTPS (pas dans la page Claude).
+if('serviceWorker' in navigator&&location.protocol==='https:'&&!dansClaude()&&document.querySelector('link[rel="manifest"]'))navigator.serviceWorker.register('sw.js').catch(()=>{});
 setInterval(tick,1000);
 setInterval(()=>sonderVeloce(false),10000);
 sonderVeloce(true);
