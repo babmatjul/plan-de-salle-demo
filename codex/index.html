@@ -303,9 +303,6 @@ button.lien{min-height:44px;padding:8px 4px}
 #haut,#bas{display:flex;flex-direction:column;gap:12px;align-items:stretch}
 .pas button{width:44px}
 .attente{display:flex;gap:12px}.attente:empty{display:none}
-.onglets{display:flex;gap:6px;padding:6px;background:var(--surface-2);border-radius:13px;position:sticky;top:0;z-index:3}
-.onglets button{flex:1;font-size:14px;border-color:transparent;background:transparent}
-.onglets button.on{background:var(--surface);color:var(--fg);border-color:var(--line);box-shadow:var(--ombre)}
 .outils{gap:6px}.astuce{display:none}.legende{width:100%;margin:0;gap:6px 12px;font-size:12px}
 .cadre{max-height:48dvh;min-height:240px;background:var(--bg)}
 .carte{padding:16px;gap:12px}.carte h2{letter-spacing:.04em;font-size:16px}
@@ -343,13 +340,37 @@ button.lien{min-height:44px;padding:8px 4px}
 @media (max-width:999px){
   .zone-plan{position:sticky;top:0;z-index:4;background:var(--bg);padding-bottom:6px}
   .cadre{height:40dvh;min-height:190px}.legende{font-size:11px;gap:4px 9px}
-  .onglets{position:static}.marque{width:100%}.actions-barre{margin:0;width:100%}.actions-barre button{flex:1}
+  .marque{width:100%}.actions-barre{margin:0;width:100%}.actions-barre button{flex:1}
 }
 @media (max-width:520px){
   .app{padding:8px;gap:8px}.barre{padding:10px}.marque span,.oeuf{display:none}
   .chip{font-size:11px;padding:3px 6px}.chip b{font-size:15px}.actions-barre{gap:4px}.barre button,.barre select{font-size:13px;padding:7px}
   .outils{gap:4px}.outils button{font-size:12px;padding:6px 9px}.zoomval{min-width:40px}
 }
+/* Disposition de service : attente à gauche, plan architectural, commandes à droite. */
+.corps{grid-template-areas:"plan" "attente" "cote"}
+@media (min-width:1000px){
+  .corps,.corps.attente-repliee{grid-template-columns:240px minmax(0,1fr) 330px;grid-template-areas:"attente plan cote"}
+  .corps.sans-attente{grid-template-columns:minmax(0,1fr) 330px;grid-template-areas:"plan cote"}
+  .attente{overflow:auto;min-height:0}
+}
+@media (min-width:1400px){.corps{grid-template-columns:270px minmax(0,1fr) 360px}}
+@media (min-width:700px) and (max-width:999px){
+  .corps{grid-template-columns:260px minmax(0,1fr);grid-template-areas:"plan plan" "attente cote"}
+  .corps.sans-attente{grid-template-columns:minmax(0,1fr);grid-template-areas:"plan" "cote"}
+}
+#plan .tb .f{fill:color-mix(in srgb,var(--c) 15%,var(--surface));stroke:var(--c)}
+#plan .tb .num{font-size:23px;fill:var(--fg)}
+#plan .tb.occ .f{fill:var(--c)}
+#plan .tb.occ .num{font-size:19px;fill:var(--on-c)}
+#plan .tb.occ .min{font-size:16px;fill:var(--on-c)}
+#plan .tb.sale .f{fill:color-mix(in srgb,var(--muted) 16%,var(--surface));stroke:var(--muted)}
+#plan .tb.sale .num{font-size:21px;fill:var(--fg)}
+#plan .serveur-point{display:none}
+#plan .tb.ferme .f{fill:var(--surface-2);stroke:var(--line)}
+.lg-libre{background:color-mix(in srgb,var(--s3) 15%,var(--surface));border-color:var(--s3)}
+.lg-occ,.lg-add,.lg-long{background:var(--s3)}
+.lg-sale{background:color-mix(in srgb,var(--muted) 16%,var(--surface));border-color:var(--muted)}
 </style>
 <style>[hidden]{display:none!important}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}img{max-width:100%}</style>
 </head>
@@ -366,6 +387,7 @@ button.lien{min-height:44px;padding:8px 4px}
     </div>
   </header>
   <main class="corps">
+    <aside class="attente" id="attente" aria-label="Liste d'attente"></aside>
     <section class="zone-plan" aria-label="Plan de la salle">
       <div class="outils">
         <button data-action="zoom-moins" aria-label="Dézoomer">−</button>
@@ -383,9 +405,7 @@ button.lien{min-height:44px;padding:8px 4px}
       <div class="cadre" id="cadre"><svg id="plan" viewBox="0 0 1290 1460" role="group" aria-label="Tables de la salle"></svg></div>
     </section>
     <div class="cote">
-      <nav class="onglets" id="onglets-service" aria-label="Commandes de service"><button id="onglet-accueil" data-action="onglet-accueil" aria-pressed="true">Arrivées et attente</button><button id="onglet-table" data-action="onglet-table" aria-pressed="false">Table sélectionnée</button></nav>
       <div id="haut"></div>
-      <aside class="attente" id="attente" aria-label="Liste d'attente"></aside>
       <div id="bas"></div>
     </div>
   </main>
@@ -449,7 +469,7 @@ const S={config:clone(CONFIG_DEFAUT),prochain:null,visites:{},attente:{},repas:[
 let decalage=0;                                  // avance de l'horloge simulée sur l'heure réelle (ms)
 const maintenant=()=>Date.now()+decalage;
 const UI={n:2,nom:'',prop:null,manuel:null,manuelAttente:null,selVisite:null,panneau:'normal',vueServeur:null,pinceau:'s1',zoom:1,pivot:false,
-  onglet:'accueil',sync:'connexion',confirmFin:0,confirmHisto:0,chargement:false,configSale:false,vitesse:0,autoPlacer:true,simT:null,pretsConnus:null,selSale:null,pivotAuto:true,ecran:false,attenteRepliee:false,avisAuto:true,contactVisible:null,inscriptionsFinies:new Set()};
+  sync:'connexion',confirmFin:0,confirmHisto:0,chargement:false,configSale:false,vitesse:0,autoPlacer:true,simT:null,pretsConnus:null,selSale:null,pivotAuto:true,ecran:false,attenteRepliee:false,avisAuto:true,contactVisible:null,inscriptionsFinies:new Set()};
 let ST=null,PRETS={};
 // Connexion à Veloce, par le connecteur (dossier veloce/ du projet). Adresse et clé gardées sur cet appareil.
 const CLE_VELOCE='plan-salle-codex-veloce-v1',PLACES=160;
@@ -691,7 +711,7 @@ async function payer(id,{t=maintenant(),source='manuel',facture=null,total=null}
 }
 async function debarrasser(n){const sale={...S.sale};delete sale[n];if(UI.selSale===n)UI.selSale=null;await store.setSale(sale);toast(`Table ${n} prête pour l'accueil`);}
 function faireProposition(n,nom,attenteId){
-  UI.panneau='normal';UI.onglet='accueil';
+  UI.panneau='normal';
   let liste=proposer(n,occSansReserves(attenteId));
   const garde=attenteId&&PRETS[attenteId];
   if(garde)liste=[Object.assign({},garde,{sautes:[]}),...liste.filter(c=>c.tables.join()!==garde.tables.join())];
@@ -732,7 +752,7 @@ async function enregistrerConfig(){
 
 function toucherTable(n){
   if(UI.panneau==='sections'){if(!infoServeur(UI.pinceau))return;S.config.affectation[n]=UI.pinceau;sauverConfigBientot();rendre();return;}
-  UI.panneau='normal';UI.onglet='table';
+  UI.panneau='normal';
   if(S.sale[n]){UI.selSale=n;UI.selVisite=null;UI.prop=null;UI.manuel=null;rendre();return;}
   UI.selSale=null;
   const occ=occupation();
@@ -803,8 +823,6 @@ const ACTIONS={
   service:async()=>{if(UI.configSale)await enregistrerConfig();UI.panneau='normal';},
   reglages:async()=>{if(UI.configSale)await enregistrerConfig();UI.panneau=UI.panneau==='reglages'?'normal':'reglages';},
   simulation:()=>{UI.panneau='simulation';},
-  'onglet-accueil':()=>{UI.onglet='accueil';},
-  'onglet-table':()=>{UI.onglet='table';},
   taille:el=>{UI.n=+el.dataset.n;faireProposition(UI.n,UI.nom.trim(),null);},
   moins:()=>{UI.n=Math.max(1,UI.n-1);if(UI.prop)faireProposition(UI.n,UI.prop.nom,UI.prop.attenteId);},
   plus:()=>{UI.n=Math.min(20,UI.n+1);if(UI.prop)faireProposition(UI.n,UI.prop.nom,UI.prop.attenteId);},
@@ -814,7 +832,7 @@ const ACTIONS={
   autre:()=>{if(UI.prop)UI.prop.idx=(UI.prop.idx+1)%UI.prop.liste.length;},
   'annuler-prop':()=>{UI.prop=null;},
   'prop-attente':async()=>{const p=UI.prop;UI.prop=null;UI.nom='';await store.setAttente(nouvelId('a'),{nom:p.nom||'',pers:p.n,ajout:maintenant()});toast('Ajouté à la liste d\'attente');},
-  'asseoir-manuel':async()=>{const ts=[...UI.manuel].sort((a,b)=>a-b);const att=UI.manuelAttente;const nom=UI.nom.trim();await asseoir(ts,UI.n,serveurDe(ts[0]),{attenteId:att,nom});UI.manuel=null;UI.manuelAttente=null;UI.nom='';UI.onglet='accueil';},
+  'asseoir-manuel':async()=>{const ts=[...UI.manuel].sort((a,b)=>a-b);const att=UI.manuelAttente;const nom=UI.nom.trim();await asseoir(ts,UI.n,serveurDe(ts[0]),{attenteId:att,nom});UI.manuel=null;UI.manuelAttente=null;UI.nom='';},
   vider:()=>{UI.manuel=null;UI.manuelAttente=null;},
   etape:async el=>{const id=UI.selVisite;if(id)await store.majVisite(id,{etape:el.dataset.e,depuis:maintenant()});},
   'etape-suivante':async el=>{const id=el.dataset.v;const v=S.visites[id];if(!v)return;if(v.etape==='addition')return payer(id);await store.majVisite(id,{etape:SUIVANTE[v.etape]||'commande',depuis:maintenant()});},
@@ -907,7 +925,7 @@ function rendrePlan(){
   const edition=UI.panneau==='sections';const moi=edition?null:vueServeur();
   const occ=edition?{}:occupation();
   let h=`<g${UI.pivot?` transform="matrix(0,1,-1,0,${H},0)"`:''}>`;
-  h+=`<rect class="fond-simple" x="16" y="16" width="${W-32}" height="${H-32}" rx="24"/>`;
+  h+=`<image href="fond-salle.png" x="0" y="0" width="${W}" height="${H}" class="fond" preserveAspectRatio="none"/>`;
   const point=(x,y)=>`<circle class="serveur-point" cx="${x}" cy="${y}" r="7"/>`;
   REPERES.forEach(([l,x,y])=>h+=txt(UI.pivot?x:Math.max(150,Math.min(W-150,x)),UI.pivot?Math.max(150,Math.min(H-150,y)):y,'repere',esc(l)));
   for(let n=1;n<=NB;n++){
@@ -927,7 +945,7 @@ function rendrePlan(){
       const u=union(g);
       if(long||v.etape==='addition')h+=rc(union(g,6),'anneau '+(long?'long':'addition'),9);
       h+=rc(u,'f',5)+point(u.x+u.w-5,u.y+5);
-      if(gi===0){const [x1,y1]=pos(u.cx,u.cy,-11),[x2,y2]=pos(u.cx,u.cy,11);h+=txt(x1,y1,'num',esc(etiquette(v.tables)))+txt(x2,y2,'min',v.etape==='addition'?'Addition':'Occupée');}
+      if(gi===0){const [x1,y1]=pos(u.cx,u.cy,-11),[x2,y2]=pos(u.cx,u.cy,11);h+=txt(x1,y1,'num',esc(etiquette(v.tables)))+txt(x2,y2,'min',delaiLisible(r));}
     });
     h+='</g>';
   }
@@ -1088,7 +1106,8 @@ function ligneAttente(id,x){
 }
 function rendreAttente(){
   const el=$('#attente');
-  const visible=!vueServeur()&&UI.panneau==='normal'&&UI.onglet==='accueil';
+  const visible=!vueServeur();
+  $('.corps').classList.toggle('sans-attente',!visible);
   if(!visible){el.innerHTML='';return;}
   const a=attenteTriee();
   el.innerHTML=`<section class="carte"><div class="tete"><h2>Liste d'attente</h2><span class="etat-sim">${pluriel(a.length,'groupe')}</span></div>
@@ -1337,19 +1356,17 @@ function rendrePanneau(){
   const act=document.activeElement;const fid=act&&act.id;const sel=fid&&act.selectionStart!=null?[act.selectionStart,act.selectionEnd]:null;
   let haut='',bas='';
   const service=UI.panneau==='normal';
-  $('#onglets-service').hidden=!service;
-  for(const nom of ['accueil','table']){const b=$('#onglet-'+nom);b.classList.toggle('on',UI.onglet===nom);b.setAttribute('aria-pressed',UI.onglet===nom);}
-  $('#onglet-accueil').textContent=vueServeur()?'Mes tables':`Arrivées et attente (${attenteTriee().length})`;
   const fiche=UI.selSale&&S.sale[UI.selSale]?carteSale(UI.selSale):UI.selVisite&&S.visites[UI.selVisite]?carteVisite(UI.selVisite):'';
   if(UI.panneau==='reglages')haut=carteReglages();
   else if(UI.panneau==='sections')haut=carteSections();
   else if(UI.panneau==='bilan')haut=carteBilan()+cartePrevisions(vueServeur());
   else if(UI.panneau==='veloce')haut=carteVeloce();
   else if(UI.panneau==='simulation')haut=salleConnectee()?'<section class="carte"><h2>Simulation</h2><p>Débranchez le connecteur dans les réglages pour retrouver la démonstration locale.</p><button data-action="veloce">Ouvrir le connecteur</button></section>':carteDemarrer()+carteSimulation();
-  else if(UI.onglet==='table')haut=fiche||(UI.manuel?carteManuel():'<section class="carte etat-vide"><h2>Choisissez une table</h2><p>Touchez une table sur le plan pour placer un groupe, suivre son repas ou la rendre disponible.</p></section>');
+  else if(fiche)haut=fiche;
+  else if(UI.manuel)haut=carteManuel();
   else if(vueServeur())haut=carteMesTables();
   else haut=UI.prop?carteProp():carteArrivee();
-  if(service&&UI.onglet==='accueil')bas=carteADebarrasser();
+  if(service)bas=carteADebarrasser();
   if(service&&UI.vitesse)bas+='<section class="carte"><h2>Simulation en cours</h2><p class="aide">Le temps est accéléré. Ces données sont fictives.</p><button data-action="simulation">Gérer la simulation</button></section>';
   $('#haut').innerHTML=haut;$('#bas').innerHTML=bas;
   if(fid){const el=document.getElementById(fid);if(el&&el!==act){el.focus({preventScroll:true});if(sel&&el.setSelectionRange)try{el.setSelectionRange(sel[0],sel[1]);}catch(e){}}}
