@@ -599,7 +599,10 @@ const ACTIONS={
   'sim-service':()=>{
     preparerSimulation();
     S.visites={};S.attente={};UI.prop=null;UI.manuel=null;UI.selVisite=null;UI.panneau='normal';
-    const d=new Date();d.setHours(7,0,0,0);decalage=d.getTime()-Date.now();UI.simT=maintenant();UI.vitesse=30;sauverLocal();
+    const d=new Date();d.setHours(7,0,0,0);decalage=d.getTime()-Date.now();UI.simT=maintenant();UI.vitesse=30;
+    // Le bilan du jour repart de zéro : on retire les repas d'un service simulé précédent le même jour.
+    const jour=d.toDateString();S.repas=S.repas.filter(r=>!(r&&Number.isFinite(r.f)&&new Date(r.f).toDateString()===jour));
+    sauverLocal();
     toast('Service simulé : ouverture à 7 h, le temps passe 30 fois plus vite');
   },
   'sim-reset':()=>{UI.vitesse=0;S.visites={};S.attente={};decalage=0;UI.simT=null;UI.prop=null;UI.manuel=null;UI.selVisite=null;sauverLocal();toast('Salle vidée, retour à l\'heure réelle');},
@@ -686,8 +689,9 @@ function rendreEntete(){
   const att=attenteTriee().length;const np=Object.keys(PRETS).length;const proch=vs.length?Math.min(...vs.map(reste)):null;
   const sync={direct:['direct','Partagé en direct'],connexion:['','Connexion…'],lent:['lent','Connexion lente, données peut-être pas à jour'],local:['','Démo sur cet appareil'],erreur:['erreur','Partage indisponible']}[UI.sync];
   $('#chiffres').innerHTML=`<span class="chip">Tables <b>${tables}</b>/80</span><span class="chip">Couverts <b>${couv}</b></span><span class="chip">Attente <b>${att}</b></span>`+
-    (np?`<span class="chip alerte"><span class="point" aria-hidden="true"></span>Tables prêtes <b>${np}</b></span>`:'')+
-    (proch!=null?`<span class="chip">Prochaine table libre <b>~${proch}′</b></span>`:'')+
+    // Toutes les pastilles restent affichées pour que le bandeau ne change pas de hauteur pendant le service.
+    `<span class="chip${np?' alerte':''}">${np?'<span class="point" aria-hidden="true"></span>':''}Tables prêtes <b>${np}</b></span>`+
+    `<span class="chip">Prochaine table libre <b>${proch!=null?'~'+proch+'′':'—'}</b></span>`+
     `<span class="chip${UI.vitesse?' alerte':''}"><b>${hm(maintenant())}</b>${UI.vitesse?' · simulation ×'+UI.vitesse:''}</span><span class="chip ${sync[0]}" title="${esc(sync[1])}"><i></i>${esc(sync[1])}</span>`;
   const sel=$('#vue');const cle=S.config.serveurs.map(s=>s.id+':'+s.nom).join('|');
   if(cle!==cleVue){cleVue=cle;sel.innerHTML='<option value="">Vue accueil</option>'+S.config.serveurs.map(s=>`<option value="${s.id}">Vue ${esc(s.nom)}</option>`).join('');}
