@@ -139,6 +139,7 @@ button,select,input{touch-action:manipulation}
 .pas output b{font:700 20px var(--f-titre)}
 .tour{display:flex;align-items:center;gap:6px;font-size:14px;color:var(--muted);flex-wrap:wrap}
 .champ{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
+.champ small{font-size:12px}
 input[type=text],input[type=password],input[type=url]{font:400 15px var(--f-texte);color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-height:40px;width:100%}
 .rang{display:flex;flex-wrap:wrap;gap:8px}
 .rang>button{flex:1 1 auto}
@@ -271,7 +272,7 @@ input[type=text],input[type=password],input[type=url]{font:400 15px var(--f-text
     <div class="chiffres" id="chiffres"></div>
     <div class="actions-barre">
       <select id="vue" aria-label="Vue de cet appareil"></select>
-      <button id="b-veloce" data-action="veloce" aria-pressed="false">Caisse</button>
+      <button id="b-veloce" data-action="veloce" aria-pressed="false">Veloce</button>
       <button id="b-bilan" data-action="bilan" aria-pressed="false">Bilan</button>
       <button id="b-sections" data-action="sections" aria-pressed="false">Sections</button>
     </div>
@@ -351,7 +352,7 @@ const maintenant=()=>Date.now()+decalage;
 const UI={n:2,nom:'',prop:null,manuel:null,manuelAttente:null,selVisite:null,panneau:'normal',vueServeur:null,pinceau:'s1',zoom:1,pivot:false,
   sync:'connexion',confirmFin:0,confirmHisto:0,chargement:false,configSale:false,vitesse:0,autoPlacer:true,simT:null,pretsConnus:null,selSale:null,pivotAuto:true,ecran:false};
 let ST=null,PRETS={};
-// Connexion à la caisse Veloce, par le connecteur (dossier veloce/ du projet). Réglée et gardée sur cet appareil.
+// Connexion à Veloce, par le connecteur (dossier veloce/ du projet). Adresse et clé gardées sur cet appareil.
 const CLE_VELOCE='plan-salle-veloce-v1',PLACES=160;
 const VEL={url:'',cle:'',seq:0,etat:'off',message:'',sante:null,durees:null,affluence:null,conf:null,bilan:null,infosA:0,recents:[],saisieUrl:'',saisieCle:'',enCours:false};
 const argent=n=>Number(n||0).toLocaleString('fr-CA',{style:'currency',currency:'CAD'});
@@ -660,10 +661,10 @@ const ACTIONS={
   veloce:()=>{UI.panneau=UI.panneau==='veloce'?'normal':'veloce';UI.prop=null;UI.manuel=null;UI.selVisite=null;UI.selSale=null;},
   'vel-connecter':async()=>{
     const url=VEL.saisieUrl.trim(),cle=VEL.saisieCle.trim();
-    if(!/^https?:\/\/\S+$/.test(url)){toast('Indiquez l\'adresse du connecteur, par exemple http://127.0.0.1:8787');return;}
+    if(!/^https?:\/\/\S+$/.test(url)){toast('Indiquez l\'adresse du connecteur, par exemple https://plan-beauport.exemple.com');return;}
     if(cle.length<8){toast('Indiquez la clé d\'accès du connecteur.');return;}
     if(url!==VEL.url)VEL.seq=0;VEL.url=url;VEL.cle=cle;VEL.etat='connexion';VEL.message='';sauverVeloce();
-    await sonderVeloce(true);if(VEL.etat==='ok')toast('Connecté à la caisse Veloce');
+    await sonderVeloce(true);if(VEL.etat==='ok')toast('Plan branché sur Veloce');
   },
   'vel-deconnecter':()=>{VEL.url='';VEL.cle='';VEL.etat='off';VEL.message='';VEL.sante=VEL.durees=VEL.affluence=VEL.conf=VEL.bilan=null;sauverVeloce();},
   'vel-importer':async()=>{try{VEL.conf=await appelVeloce('/configuration');if(!VEL.conf.serveurs.length)toast('Veloce n\'a renvoyé aucun serveur actif.');}catch(e){toast(e.message);}},
@@ -846,7 +847,7 @@ function carteVisite(id){
   <div class="note${long?' alerte':''}">Libre vers <b>${hm(maintenant()+r*6e4)}</b>, dans ~${r} min.${long?` Repas plus long que la moyenne (${est} min).`:''}</div>
   <div class="etapes" role="group" aria-label="Étape du repas">${ETAPES.map(([k,l])=>`<button class="${v.etape===k?'on':''}" aria-pressed="${v.etape===k}" data-action="etape" data-e="${k}">${l}</button>`).join('')}</div>
   <div class="rang"><button class="prim" data-action="payer">Addition payée</button></div>
-  <p class="aide">${v.tables.length>1?'Les tables passeront':'La table passera'} « à débarrasser ». Avec la caisse Veloce branchée, c'est automatique au paiement.</p>
+  <p class="aide">${v.tables.length>1?'Les tables passeront':'La table passera'} « à débarrasser ». Avec Veloce branché, c'est automatique dès que la serveuse encaisse.</p>
   <div><button class="lien" data-action="annuler-visite">Annuler cette place (erreur de saisie)</button></div></section>`;
 }
 function carteDemarrer(){
@@ -998,24 +999,27 @@ function carteADebarrasser(){
     return `<li class="${m>=5?'pret':''}"><div class="q"><b>Table ${n}</b><small>${libSource(s)} · depuis ${m} min</small></div><button data-action="debarrasser" data-n="${n}">Débarrassée</button></li>`;}).join('');
   return `<section class="carte"><div class="tete"><h2>À débarrasser</h2><span class="etat-sim">${pluriel(l.length,'table')}</span></div><ul class="liste">${li}${l.length>6?`<li><div class="q"><small>Et ${pluriel(l.length-6,'autre table','autres tables')}.</small></div></li>`:''}</ul></section>`;
 }
-// ---------- Caisse Veloce ----------
+// ---------- Connexion à Veloce ----------
+// Un seul branchement pour tout le restaurant : le connecteur lit dans le nuage Veloce les factures
+// de toutes les tablettes des serveuses. Rien n'est installé sur ces tablettes.
 const dansClaude=()=>!!(window.claude&&window.claude.use);
 function carteVeloce(){
   const s=VEL.sante,etat=VEL.etat;
-  const lib=etat==='ok'?`Connectée${s&&s.dernierSucces?` · synchro il y a ${Math.max(0,Math.round((Date.now()-s.dernierSucces)/1000))} s`:''}${s&&s.retardCaisseSecondes!=null?` · délai de la caisse ~${s.retardCaisseSecondes} s`:''}`
-    :etat==='erreur'?esc(VEL.message):etat==='connexion'?'Connexion…':'Non connectée';
+  const lib=etat==='ok'?`Branché sur Veloce${s&&s.dernierSucces?` · mis à jour il y a ${Math.max(0,Math.round((Date.now()-s.dernierSucces)/1000))} s`:''}`
+    :etat==='erreur'?esc(VEL.message):etat==='connexion'?'Branchement…':'Pas encore branché';
   const durees=VEL.durees?Object.keys(BASE).map(k=>{const p=VEL.durees.parTaille&&VEL.durees.parTaille[k];return `<tr><td>${CAT_LIB[k]}</td><td>${p?p.mediane+' min':'—'}</td><td>${p?p.n:0}</td><td><b>${ST[k].base} min</b></td></tr>`;}).join(''):'';
   const c=VEL.conf;
   const apercu=c&&c.serveurs?`<div class="note"><b>Proposition de Veloce</b><ul class="liste">${c.serveurs.map(x=>`<li class="${x.id}"><span class="pastille"><i></i></span><div class="q"><b>${esc(x.nom)}</b><small>${esc(((x.veloce&&x.veloce.employes)||[]).join(', ')||'—')} · ${pluriel(Object.values(c.affectation||{}).filter(a=>a===x.id).length,'table')}</small></div></li>`).join('')}</ul>${c.sansSection&&c.sansSection.length?`<p class="aide">${pluriel(c.sansSection.length,'table')} sans historique iront à ${esc(c.serveurs[0]?c.serveurs[0].nom:'la première section')}.</p>`:''}<div class="rang"><button class="prim" data-action="vel-appliquer">Appliquer au plan</button><button data-action="vel-annuler-conf">Annuler</button></div></div>`:'';
-  return `<section class="carte"><div class="tete"><h2>Caisse Veloce</h2><button class="lien" data-action="veloce">Fermer</button></div>
+  return `<section class="carte"><div class="tete"><h2>Connexion à Veloce</h2><button class="lien" data-action="veloce">Fermer</button></div>
+  <p class="aide">Un seul branchement pour tout le restaurant. Quand une serveuse encaisse une table sur sa tablette Veloce, la table passe « à débarrasser » ici, et le plan apprend la vraie durée du repas. Rien à installer ni à changer sur les tablettes Veloce.</p>
   <div class="etat-veloce ${etat}"><i></i><span>${lib}</span></div>
-  ${dansClaude()?'<div class="note alerte">Depuis la page Claude, le navigateur ne peut pas joindre le connecteur : utilisez le lien GitHub ou la version installée sur la tablette.</div>':''}
-  <label class="champ" for="vel-url">Adresse du connecteur<input id="vel-url" type="url" autocomplete="off" placeholder="http://127.0.0.1:8787" value="${esc(VEL.saisieUrl)}"></label>
-  <label class="champ" for="vel-cle">Clé d'accès<input id="vel-cle" type="password" autocomplete="off" value="${esc(VEL.saisieCle)}"></label>
-  <div class="rang"><button class="prim" data-action="vel-connecter">${etat==='ok'?'Reconnecter':'Connecter'}</button>${VEL.url?'<button data-action="vel-deconnecter">Déconnecter</button>':''}</div>
-  <p class="aide">Le connecteur tourne sur un ordinateur du restaurant ou sur un serveur : c'est lui qui garde les identifiants Veloce. La clé d'accès est celle de son fichier .env ; elle reste enregistrée sur cet appareil seulement.</p></section>
+  ${dansClaude()?'<div class="note alerte">Depuis la page Claude, le navigateur ne peut pas joindre le connecteur : utilisez le lien GitHub ou l\'application installée sur la tablette.</div>':''}
+  <label class="champ" for="vel-url">Adresse du connecteur<input id="vel-url" type="url" autocomplete="off" placeholder="https://plan-beauport.exemple.com" value="${esc(VEL.saisieUrl)}"><small>Donnée par la personne qui a installé le connecteur.</small></label>
+  <label class="champ" for="vel-cle">Clé d'accès<input id="vel-cle" type="password" autocomplete="off" value="${esc(VEL.saisieCle)}"><small>Le mot de passe choisi à l'installation du connecteur ; il protège les ventes du restaurant.</small></label>
+  <div class="rang"><button class="prim" data-action="vel-connecter">${etat==='ok'?'Rebrancher':'Brancher'}</button>${VEL.url?'<button data-action="vel-deconnecter">Débrancher</button>':''}</div>
+  <p class="aide">Le connecteur est un petit programme installé une seule fois, sur un serveur : il lit les factures de toutes les tablettes dans le nuage Veloce et garde les identifiants Veloce. Cet appareil n'enregistre que l'adresse et la clé ; on les saisit une fois sur chaque appareil qui affiche le plan.</p></section>
   ${etat==='ok'?`<section class="carte"><div class="tete"><h2>Tables payées</h2></div>
-  <p class="aide">Une table payée en caisse passe « à débarrasser » sur le plan${s&&s.retardCaisseSecondes!=null?`, environ ${s.retardCaisseSecondes} s après le paiement`:''}.</p>
+  <p class="aide">Dès qu'une serveuse encaisse une table sur sa tablette Veloce, elle passe « à débarrasser » sur le plan${s&&s.retardCaisseSecondes!=null?`, environ ${s.retardCaisseSecondes} s après l'encaissement`:''}.</p>
   ${VEL.recents.length?`<ul class="liste">${VEL.recents.map(r=>`<li><div class="q"><b>Table ${r.table}</b><small>payée à ${hm(r.a)}${r.total!=null?' · '+argent(r.total):''}</small></div></li>`).join('')}</ul>`:'<p class="vide">Aucune table payée depuis la connexion.</p>'}
   ${durees?`<div class="tete"><h2>Durées apprises</h2></div><div class="tableau"><table><thead><tr><th>Groupe</th><th>Médiane</th><th>Repas</th><th>Maintenant</th></tr></thead><tbody>${durees}</tbody></table></div><p class="aide">« Maintenant » tient compte de l'heure et du jour ; c'est la durée qu'utilise le plan.</p>`:''}
   <div class="tete"><h2>Serveurs et sections</h2></div><p class="aide">Reprend les sections de Veloce et les tables que chaque serveur sert d'habitude.</p>
@@ -1088,7 +1092,7 @@ let toastT;function toast(m){const el=$('#toast');el.textContent=m;el.hidden=fal
 // ---------- Échanges avec le connecteur Veloce (toutes les 10 secondes) ----------
 function chargerVeloce(){
   try{const d=JSON.parse(localStorage.getItem(CLE_VELOCE)||'null');if(d){VEL.url=d.url||'';VEL.cle=d.cle||'';VEL.seq=Number(d.seq)||0;}}catch(e){}
-  VEL.saisieUrl=VEL.url||'http://127.0.0.1:8787';VEL.saisieCle=VEL.cle;VEL.etat=VEL.url&&VEL.cle?'connexion':'off';
+  VEL.saisieUrl=VEL.url||'';VEL.saisieCle=VEL.cle;VEL.etat=VEL.url&&VEL.cle?'connexion':'off';
 }
 function sauverVeloce(){try{localStorage.setItem(CLE_VELOCE,JSON.stringify({url:VEL.url,cle:VEL.cle,seq:VEL.seq}));}catch(e){}}
 async function appelVeloce(chemin,{auth=true}={}){
@@ -1104,7 +1108,7 @@ async function appelVeloce(chemin,{auth=true}={}){
     throw e;
   }finally{clearTimeout(t);}
 }
-// Une table payée en caisse : le repas se termine et la table passe « à débarrasser ».
+// Une table encaissée sur une tablette Veloce : le repas se termine et la table passe « à débarrasser ».
 async function appliquerPaiement(e){
   const n=Number(e.table);if(!TABLES[n])return;
   if(Date.now()-(Number(e.fermeture)||0)>30*6e4)return;                                     // paiement trop ancien

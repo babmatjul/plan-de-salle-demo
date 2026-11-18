@@ -1,6 +1,6 @@
 // Service hors connexion du plan de salle (copié en sw.js par outils/construire-demo.mjs).
 // La page s'ouvre même sans réseau, avec la dernière version vue ; en ligne, elle se met à jour toute seule.
-const VERSION = 'plan-salle-851bb687fcc3';
+const VERSION = 'plan-salle-8de922a4712c';
 const COQUILLE = ['./', './index.html', './fond-salle.png', './manifest.webmanifest', './icone-192.png', './icone-512.png', './icone-maskable-512.png', './icone-180.png'];
 
 self.addEventListener('install', (e) => {
