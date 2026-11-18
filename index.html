@@ -543,9 +543,11 @@ function etapeSimulation(t){
     const e=f>=.9?'addition':f>=.75?'dessert':f>=.35?'plats':f>=.1?'commande':'assis';
     if(ORDRE_ETAPE[e]>(ORDRE_ETAPE[v.etape]??0)){v.etape=e;v.depuis=t;}
   }
-  // 2. L'accueil place les groupes en attente dont la table est prête depuis une minute.
+  // 2. Après 25 minutes d'attente, un groupe simulé finit par repartir.
+  for(const [id,a] of attenteTriee())if(t-a.ajout>25*6e4)delete S.attente[id];
+  // 3. L'accueil place les groupes en attente dont la table est prête depuis une minute.
   if(UI.autoPlacer){const prets=calculerPrets();for(const [id,c] of Object.entries(prets)){const a=S.attente[id];if(!a)continue;if(!a.pret){a.pret=t;continue;}if(t-a.pret>=6e4)simAsseoir(c,a.pers,a.nom,id,t);}}
-  // 3. De nouveaux groupes arrivent selon l'heure ; s'il y a déjà une file, ils s'y ajoutent.
+  // 4. De nouveaux groupes arrivent selon l'heure ; s'il y a déjà une file, ils s'y ajoutent.
   const k=poisson(AFFLUENCE[new Date(t).getHours()]||0);
   for(let i=0;i<k;i++){
     const n=tirerTaille();const nom=NOMS[Math.floor(Math.random()*NOMS.length)];
@@ -756,7 +758,7 @@ function carteSimulation(){
   <p class="aide">Le temps passe plus vite : des groupes arrivent selon l'affluence d'un brunch, avancent dans leur repas et repartent. Tout se passe sur cet appareil.</p>
   <div class="vitesses" role="group" aria-label="Vitesse de la simulation">${bt}</div>
   <label class="bascule"><input type="checkbox" id="auto-placer" ${UI.autoPlacer?'checked':''}>L'accueil place tout seul les groupes en attente</label>
-  <p class="aide">Décochez pour placer vous-même les groupes signalés « table prête ».</p>
+  <p class="aide">Décochez pour placer vous-même les groupes signalés « table prête ». Un groupe qui attend plus de 25 minutes repart.</p>
   <div class="rang"><button data-action="sim-service">${Object.keys(S.visites).length?'Recommencer à 7 h (vide la salle)':'Service complet de 7 h à 14 h'}</button></div>
   ${store.db?'':'<div><button class="lien" data-action="sim-reset">Arrêter et revenir à l\'heure réelle</button></div>'}</section>`;
 }
@@ -768,13 +770,13 @@ function carteRotation(){
   <ul class="liste">${li}</ul></section>`;
 }
 function carteAttente(){
-  const a=attenteTriee();
-  const li=a.map(([id,x])=>{
+  const a=attenteTriee();const MAX=8;
+  const li=a.slice(0,MAX).map(([id,x])=>{
     const c=PRETS[id];const m=minutesDepuis(x.ajout);
     if(c)return `<li class="pret"><span class="point" aria-hidden="true"></span><div class="q"><b>${esc(x.nom||'Sans nom')} · ${x.pers} pers.</b><small>Table prête : ${libTables(c.tables)} · ${esc(nomServeur(c.serveur))} · attend depuis ${m} min</small></div><button class="prim" data-action="placer-pret" data-id="${esc(id)}">Placer ici</button><button class="lien" data-action="retirer-attente" data-id="${esc(id)}">Retirer</button></li>`;
     const p=prevision(x.pers);const eta=p?(p.min===0?'Bientôt une table':`Table prévue dans ~${p.min} min`):'Groupe trop grand pour une rangée';
     return `<li><div class="q"><b>${esc(x.nom||'Sans nom')} · ${x.pers} pers.</b><small>Attend depuis ${m} min · ${eta}</small></div><button data-action="placer-attente" data-id="${esc(id)}">Choisir</button><button class="lien" data-action="retirer-attente" data-id="${esc(id)}">Retirer</button></li>`;
-  }).join('');
+  }).join('')+(a.length>MAX?`<li><div class="q"><small>Et ${pluriel(a.length-MAX,'autre groupe','autres groupes')}, placés au fur et à mesure.</small></div></li>`:'');
   return `<section class="carte"><div class="tete"><h2>Liste d'attente</h2>${a.length?`<span class="etat-sim">${pluriel(a.length,'groupe')}</span>`:''}</div>${a.length?`<ul class="liste">${li}</ul><p class="aide">Dès qu'une table convient au prochain groupe, elle lui est gardée (pointillés jaunes sur le plan) et sa ligne s'allume.</p>`:'<p class="vide">Personne en attente.</p>'}</section>`;
 }
 function cartePrevisions(filtre){
@@ -885,7 +887,7 @@ function rendrePanneau(){
     else if(UI.manuel)haut+=carteManuel();
     else if(UI.prop)haut+=carteProp();
     if(vides&&!UI.vitesse)haut+=carteDemarrer();
-    bas=carteAttente()+carteSimulation()+carteRotation()+cartePrevisions()+(vides?'':carteService());
+    bas=carteSimulation()+carteAttente()+carteRotation()+cartePrevisions()+(vides?'':carteService());
   }
   $('#haut').innerHTML=haut;$('#bas').innerHTML=bas;
   if(fid){const el=document.getElementById(fid);if(el&&el!==act){el.focus({preventScroll:true});if(sel&&el.setSelectionRange)try{el.setSelectionRange(sel[0],sel[1]);}catch(e){}}}
