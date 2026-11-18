@@ -9,46 +9,67 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap">
 <style>
 /* Mise en page : barre d'état en haut ; plan à gauche, panneau d'accueil à droite (tablette, ordinateur) ;
    sur téléphone tout s'empile : arrivée, plan, puis rotation, attente et prévisions. */
 :root{
-  --bg:#edf1f1; --surface:#ffffff; --surface-2:#e2e8e9; --fg:#152023; --muted:#56656a; --line:#cbd5d7;
-  --focus:#2563eb; --warn:#b45309; --danger:#b91c1c; --ok:#15803d;
-  --s1:#c2410c; --s2:#0f766e; --s3:#6d28d9; --s4:#a16207; --s5:#be185d; --on-s:#ffffff;
-  --fond-filtre:none; --fond-opacite:.6;
+  /* Couleurs de la déco du plan de Beauport : vert foncé, olive, merisier, rose vintage ; jaune d'œuf pour la sélection. */
+  --bg:#eef1ea; --surface:#ffffff; --surface-2:#e4eadf; --fg:#18231c; --muted:#58675c; --line:#d2dacc;
+  --vert:#1f4a33; --vert-texte:#ffffff; --jaune:#f3b61f; --jaune-texte:#2a1f00; --blanc-oeuf:#fbfaf5;
+  --bande:#1d3a2a; --bande-texte:#f4f7f1; --bande-doux:#b7cabb; --bande-ligne:rgb(255 255 255 / .16); --bande-chip:rgb(255 255 255 / .07);
+  --ombre:0 1px 2px rgb(24 45 30 / .06),0 14px 30px -20px rgb(24 45 30 / .4);
+  --focus:#2f6fd6; --warn:#b45309; --danger:#b91c1c; --ok:#4cc27a;
+  --s1:#b4532a; --s2:#5f7a1e; --s3:#b03f6e; --s4:#3b6ea8; --s5:#6a4fb0; --on-s:#ffffff;
+  --fond-filtre:none; --fond-opacite:.55;
   --f-texte:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
   --f-titre:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-marque:"Bricolage Grotesque","Barlow",system-ui,sans-serif;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#0f1517; --surface:#172024; --surface-2:#202b2f; --fg:#e6eef0; --muted:#97a7ab; --line:#2d3b40;
+  --bg:#0e1511; --surface:#16201a; --surface-2:#1f2b23; --fg:#e7efe8; --muted:#9db0a2; --line:#2b3a30;
+  --vert:#4aa874; --vert-texte:#0e1511; --jaune:#f5c542; --jaune-texte:#241a00;
+  --bande:#132a1d; --bande-texte:#eef5ef; --bande-doux:#9fb8a6; --bande-ligne:rgb(255 255 255 / .12); --bande-chip:rgb(255 255 255 / .05);
+  --ombre:0 1px 2px rgb(0 0 0 / .35);
   --focus:#60a5fa; --warn:#fbbf24; --danger:#f87171; --ok:#4ade80;
-  --s1:#fb923c; --s2:#2dd4bf; --s3:#a78bfa; --s4:#facc15; --s5:#f472b6; --on-s:#0f1517;
-  --fond-filtre:invert(1); --fond-opacite:.38; color-scheme:dark}}
+  --s1:#f08a5d; --s2:#a8c95a; --s3:#f07aa8; --s4:#7fb0ea; --s5:#a993ec; --on-s:#0e1511;
+  --fond-filtre:invert(1); --fond-opacite:.36; color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#0f1517; --surface:#172024; --surface-2:#202b2f; --fg:#e6eef0; --muted:#97a7ab; --line:#2d3b40;
+  --bg:#0e1511; --surface:#16201a; --surface-2:#1f2b23; --fg:#e7efe8; --muted:#9db0a2; --line:#2b3a30;
+  --vert:#4aa874; --vert-texte:#0e1511; --jaune:#f5c542; --jaune-texte:#241a00;
+  --bande:#132a1d; --bande-texte:#eef5ef; --bande-doux:#9fb8a6; --bande-ligne:rgb(255 255 255 / .12); --bande-chip:rgb(255 255 255 / .05);
+  --ombre:0 1px 2px rgb(0 0 0 / .35);
   --focus:#60a5fa; --warn:#fbbf24; --danger:#f87171; --ok:#4ade80;
-  --s1:#fb923c; --s2:#2dd4bf; --s3:#a78bfa; --s4:#facc15; --s5:#f472b6; --on-s:#0f1517;
-  --fond-filtre:invert(1); --fond-opacite:.38; color-scheme:dark}
+  --s1:#f08a5d; --s2:#a8c95a; --s3:#f07aa8; --s4:#7fb0ea; --s5:#a993ec; --on-s:#0e1511;
+  --fond-filtre:invert(1); --fond-opacite:.36; color-scheme:dark}
 *{box-sizing:border-box}
 html,body{height:100%}
 body{margin:0;background:var(--bg);color:var(--fg);font:400 15px/1.45 var(--f-texte);-webkit-font-smoothing:antialiased}
 .s1{--c:var(--s1)} .s2{--c:var(--s2)} .s3{--c:var(--s3)} .s4{--c:var(--s4)} .s5{--c:var(--s5)}
 .app{display:flex;flex-direction:column;gap:12px;min-height:100%;padding-block:12px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
-.barre{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px}
-.marque{display:flex;align-items:baseline;gap:10px;margin-right:auto;min-width:0}
-.marque h1{font:700 27px/1 var(--f-titre);letter-spacing:.01em;margin:0;text-wrap:balance}
-.marque span{color:var(--muted);font-size:13px}
+.barre{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;background:var(--bande);color:var(--bande-texte);border-radius:16px;padding:12px 14px 12px 16px;box-shadow:var(--ombre)}
+.marque{display:flex;align-items:center;gap:12px;margin-right:auto;min-width:0}
+.titres{display:flex;flex-direction:column;gap:4px;min-width:0}
+.marque h1{font:700 26px/1 var(--f-marque);letter-spacing:-.015em;margin:0;color:var(--bande-texte);text-wrap:balance}
+.marque span{color:var(--bande-doux);font-size:13px}
+.oeuf{position:relative;flex:none;width:40px;height:33px;background:var(--blanc-oeuf);border-radius:58% 42% 52% 48% / 55% 60% 40% 45%;transform:rotate(-8deg)}
+.oeuf::after{content:"";position:absolute;width:15px;height:15px;left:12px;top:8px;border-radius:50%;background:var(--jaune);box-shadow:inset -2px -2px 0 rgb(0 0 0 / .1)}
 .chiffres{display:flex;flex-wrap:wrap;gap:6px}
-.chip{display:inline-flex;align-items:baseline;gap:5px;padding:5px 10px;border:1px solid var(--line);border-radius:999px;background:var(--surface);font-size:13px;color:var(--muted);white-space:nowrap}
-.chip b{font:600 18px/1 var(--f-titre);color:var(--fg);font-variant-numeric:tabular-nums}
+.chip{display:inline-flex;align-items:baseline;gap:5px;padding:5px 11px;border:1px solid var(--bande-ligne);border-radius:999px;background:var(--bande-chip);font-size:13px;color:var(--bande-doux);white-space:nowrap}
+.chip b{font:600 18px/1 var(--f-titre);color:var(--bande-texte);font-variant-numeric:tabular-nums}
 .chip i{width:8px;height:8px;border-radius:50%;background:var(--muted);display:inline-block;align-self:center}
 .chip.direct i{background:var(--ok)} .chip.lent i,.chip.erreur i{background:var(--warn)}
-button{font:500 15px/1.2 var(--f-texte);color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:9px 13px;cursor:pointer;min-height:40px}
+button{font:500 15px/1.2 var(--f-texte);color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 13px;cursor:pointer;min-height:40px;transition:background-color .15s,border-color .15s,transform .1s}
 button:hover{border-color:var(--muted)}
+button:active{transform:translateY(1px)}
 button:focus-visible,input:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
-button.prim,button.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+button.prim{background:var(--vert);color:var(--vert-texte);border-color:var(--vert);font-weight:600}
+button.prim:hover{background:color-mix(in srgb,var(--vert) 88%,var(--fg))}
+button.on{background:var(--jaune);color:var(--jaune-texte);border-color:var(--jaune);font-weight:600}
+.barre button{background:transparent;color:var(--bande-texte);border-color:var(--bande-ligne)}
+.barre button:hover{border-color:var(--bande-doux)}
+.barre button.on{background:var(--jaune);color:var(--jaune-texte);border-color:var(--jaune)}
+@media (prefers-reduced-motion:reduce){button{transition:none}}
 button.lien{border:0;background:none;padding:4px 2px;min-height:0;color:var(--muted);text-decoration:underline;text-underline-offset:3px;font-size:14px}
 button.danger{color:var(--danger);border-color:color-mix(in srgb,var(--danger) 45%,var(--line))}
 button[disabled]{opacity:.55;cursor:default}
@@ -67,13 +88,17 @@ button[disabled]{opacity:.55;cursor:default}
 .lg-add{background:var(--s2);outline:2px solid var(--warn);outline-offset:1px}
 .lg-long{background:var(--s2);outline:2px solid var(--danger);outline-offset:1px}
 .lg-ferme{background:var(--surface-2);border:2px dashed var(--line)}
-.cadre{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:auto;max-height:76vh;overscroll-behavior:contain}
+.cadre{background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:auto;max-height:76vh;overscroll-behavior:contain;box-shadow:var(--ombre)}
 .cadre svg{display:block;width:calc(var(--z,1)*100%);height:auto;margin:0 auto}
-.carte{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0}
-.carte h2{margin:0;font:600 15px/1.2 var(--f-titre);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+#plan{user-select:none;-webkit-user-select:none}
+.cadre.peut-glisser{cursor:grab}
+.cadre.glisse,.cadre.glisse #plan .tb{cursor:grabbing}
+.astuce{font-size:13px;color:var(--muted)}
+.carte{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:15px;display:flex;flex-direction:column;gap:10px;min-width:0;box-shadow:var(--ombre)}
+.carte h2{margin:0;font:600 15px/1.2 var(--f-titre);letter-spacing:.09em;text-transform:uppercase;color:var(--vert)}
 .tete{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
-.prop{border:2px solid var(--c,var(--fg))}
-.grand{font:700 31px/1.05 var(--f-titre);margin:0;text-wrap:balance}
+.prop{border:2px solid var(--c,var(--vert));background:color-mix(in srgb,var(--c,var(--jaune)) 7%,var(--surface))}
+.grand{font:700 30px/1.05 var(--f-marque);letter-spacing:-.015em;margin:0;text-wrap:balance}
 .meta{display:flex;flex-wrap:wrap;gap:4px 12px;color:var(--muted);font-size:14px}
 .pastille{display:inline-flex;align-items:center;gap:6px;font-weight:500;color:var(--fg)}
 .pastille i{width:12px;height:12px;border-radius:50%;background:var(--c);flex:none}
@@ -101,7 +126,7 @@ input[type=text]{font:400 15px var(--f-texte);color:var(--fg);background:var(--b
 .liste .q small{color:var(--muted);font-size:13px}
 .liste button{min-height:34px;padding:5px 11px;font-size:14px}
 .eta{font:700 20px var(--f-titre);font-variant-numeric:tabular-nums;white-space:nowrap}
-.badge{font-style:normal;font-size:12px;font-weight:600;padding:2px 7px;border-radius:999px;background:var(--fg);color:var(--bg);margin-left:6px;vertical-align:1px}
+.badge{font-style:normal;font-size:12px;font-weight:600;padding:2px 7px;border-radius:999px;background:var(--jaune);color:var(--jaune-texte);margin-left:6px;vertical-align:1px}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
 .seg button{border:0;border-radius:0;min-height:32px;padding:5px 10px;font-size:13px}
 .vide{color:var(--muted);font-size:14px;margin:0}
@@ -115,7 +140,7 @@ input[type=text]{font:400 15px var(--f-texte);color:var(--fg);background:var(--b
 .tableau td{text-align:right;padding:6px;border-bottom:1px solid var(--line)}
 .tableau th:first-child,.tableau td:first-child{text-align:left;padding-left:0}
 .tableau td b{font-weight:600}
-.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:500;max-width:min(92vw,520px);z-index:20;box-shadow:0 6px 24px rgb(0 0 0 / .2)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--bande);color:var(--bande-texte);padding:10px 16px;border-radius:10px;font-weight:500;max-width:min(92vw,520px);z-index:20;box-shadow:0 6px 24px rgb(0 0 0 / .2)}
 #plan text{text-anchor:middle;dominant-baseline:central;pointer-events:none}
 #plan .fond{opacity:var(--fond-opacite);filter:var(--fond-filtre);pointer-events:none}
 #plan .repere{font:600 20px var(--f-titre);letter-spacing:.08em;text-transform:uppercase;fill:var(--muted)}
@@ -155,7 +180,7 @@ input[type=text]{font:400 15px var(--f-texte);color:var(--fg);background:var(--b
 <body>
 <div class="app">
   <header class="barre">
-    <div class="marque"><h1>Plan de salle</h1><span>80 tables · 160 places</span></div>
+    <div class="marque"><span class="oeuf" aria-hidden="true"></span><div class="titres"><h1>Plan de salle</h1><span>Beauport · 80 tables · 160 places</span></div></div>
     <div class="chiffres" id="chiffres"></div>
     <button id="b-sections" data-action="sections" aria-pressed="false">Sections</button>
   </header>
@@ -166,6 +191,7 @@ input[type=text]{font:400 15px var(--f-texte);color:var(--fg);background:var(--b
         <button data-action="zoom-ajuster">Ajuster</button>
         <button data-action="zoom-plus" aria-label="Zoomer">+</button>
         <button data-action="pivot" id="b-pivot" aria-pressed="false">Pivoter le plan</button>
+        <span class="astuce">Maintenez le clic pour déplacer le plan · Ctrl + molette pour zoomer</span>
         <div class="legende" aria-hidden="true">
           <span><i class="lg-libre"></i>Libre</span><span><i class="lg-occ"></i>Occupée, minutes restantes</span>
           <span><i class="lg-add"></i>Addition demandée</span><span><i class="lg-long"></i>Plus long que prévu</span><span><i class="lg-ferme"></i>Section fermée</span>
@@ -455,7 +481,16 @@ const ACTIONS={
   pivot:()=>{UI.pivot=!UI.pivot;sauverUI();}
 };
 const ZOOMS=[1,1.5,2,2.5,3,4];
-function changerZoom(d){const i=ZOOMS.indexOf(UI.zoom);UI.zoom=ZOOMS[Math.min(ZOOMS.length-1,Math.max(0,(i<0?0:i)+d))];sauverUI();}
+// Zoom qui garde sous le curseur (ou au centre du cadre) le même point du plan.
+function changerZoom(d,px,py){
+  const r=cadre.getBoundingClientRect();
+  const ax=(px??r.left+cadre.clientWidth/2)-r.left,ay=(py??r.top+cadre.clientHeight/2)-r.top;
+  const fx=(cadre.scrollLeft+ax)/cadre.scrollWidth,fy=(cadre.scrollTop+ay)/cadre.scrollHeight;
+  const i=ZOOMS.indexOf(UI.zoom);const z=ZOOMS[Math.min(ZOOMS.length-1,Math.max(0,(i<0?0:i)+d))];
+  if(z===UI.zoom)return;
+  UI.zoom=z;sauverUI();rendre();
+  cadre.scrollLeft=fx*cadre.scrollWidth-ax;cadre.scrollTop=fy*cadre.scrollHeight-ay;
+}
 
 document.addEventListener('click',async e=>{
   const t=e.target.closest('#plan .tb');
@@ -510,6 +545,7 @@ function rendrePlan(){
   cadre.style.setProperty('--z',UI.zoom);
   cadre.classList.toggle('ajuste',UI.zoom===1);
   $('#b-pivot').setAttribute('aria-pressed',UI.pivot);
+  requestAnimationFrame(()=>cadre.classList.toggle('peut-glisser',cadre.scrollWidth>cadre.clientWidth+2||cadre.scrollHeight>cadre.clientHeight+2));
 }
 
 function rendreEntete(){
@@ -639,6 +675,38 @@ function nettoyerUI(){
 }
 function rendre(){ST=stats();nettoyerUI();rendreEntete();rendrePlan();rendrePanneau();}
 let toastT;function toast(m){const el=$('#toast');el.textContent=m;el.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>el.hidden=true,3500);}
+
+// ---------- Déplacer le plan en maintenant le clic (souris, stylet) ; au doigt, le défilement natif s'en charge ----------
+let glisse=null,bloquerClic=false,dernierZoomMolette=0;
+cadre.addEventListener('pointerdown',e=>{
+  if(e.pointerType==='touch'||e.button!==0)return;
+  glisse={x:e.clientX,y:e.clientY,l:cadre.scrollLeft,t:cadre.scrollTop,actif:false,id:e.pointerId};
+});
+cadre.addEventListener('pointermove',e=>{
+  if(!glisse||e.pointerId!==glisse.id)return;
+  const dx=e.clientX-glisse.x,dy=e.clientY-glisse.y;
+  if(!glisse.actif){
+    if(Math.hypot(dx,dy)<5)return; // en dessous, c'est un simple clic sur une table
+    glisse.actif=true;cadre.classList.add('glisse');
+    try{cadre.setPointerCapture(e.pointerId);}catch(_){}
+  }
+  cadre.scrollLeft=glisse.l-dx;cadre.scrollTop=glisse.t-dy;e.preventDefault();
+});
+function finGlisse(){
+  if(!glisse)return;
+  if(glisse.actif){bloquerClic=true;setTimeout(()=>{bloquerClic=false;},0);} // le relâchement ne doit pas choisir une table
+  cadre.classList.remove('glisse');glisse=null;
+}
+cadre.addEventListener('pointerup',finGlisse);
+cadre.addEventListener('pointercancel',finGlisse);
+cadre.addEventListener('click',e=>{if(bloquerClic){e.stopPropagation();e.preventDefault();bloquerClic=false;}},true);
+cadre.addEventListener('dragstart',e=>e.preventDefault());
+cadre.addEventListener('wheel',e=>{
+  if(!(e.ctrlKey||e.metaKey))return;
+  e.preventDefault();
+  const now=Date.now();if(now-dernierZoomMolette<120)return;dernierZoomMolette=now;
+  changerZoom(e.deltaY<0?1:-1,e.clientX,e.clientY);
+},{passive:false});
 
 // ---------- Démarrage ----------
 chargerLocal();
