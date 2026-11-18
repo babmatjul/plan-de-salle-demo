@@ -229,6 +229,25 @@ input[type=text],input[type=password],input[type=url]{font:400 15px var(--f-text
   .cadre{flex:1;min-height:0;max-height:none;touch-action:none} /* tablette en paysage : glisser et pincer gérés par la page */
   html,body{overscroll-behavior:none}
 }
+/* Tablette en paysage (écran peu haut) : bandeau et barre d'outils compacts pour laisser la hauteur au plan. */
+@media (min-width:1000px) and (max-height:900px){
+  .app{gap:8px;padding-block:8px}
+  .barre{padding:7px 12px;gap:6px 10px}
+  .marque{gap:9px}
+  .marque span{display:none}
+  .marque h1{font-size:22px}
+  .oeuf{width:30px;height:25px}
+  .oeuf::after{width:11px;height:11px;left:9px;top:6px}
+  .chiffres{gap:4px}
+  .chip{padding:3px 8px;font-size:12px}
+  .chip b{font-size:15px}
+  .barre button,.barre select{min-height:34px;padding:5px 10px;font-size:14px}
+  .zone-plan{gap:6px}
+  .outils{gap:4px}
+  .legende{font-size:12px;gap:2px 9px}
+}
+/* Écran tactile : l'astuce pour la souris n'a pas lieu d'être (les gestes sont expliqués dans « Sections »). */
+@media (pointer:coarse){.astuce{display:none}}
 /* Tablette en portrait : le plan d'abord, puis les cartes sur deux colonnes (une carte seule sur sa ligne prend toute la largeur). */
 @media (min-width:700px) and (max-width:999px){
   .corps{grid-template-areas:"plan" "haut" "bas"}
