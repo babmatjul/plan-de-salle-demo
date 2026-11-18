@@ -11,16 +11,18 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap">
 <style>
-/* Mise en page : barre d'état en haut ; plan à gauche, panneau d'accueil à droite (tablette, ordinateur) ;
-   sur téléphone tout s'empile : arrivée, plan, puis rotation, attente et prévisions. */
+/* Mise en page : bandeau vert en haut ; plan à gauche, panneau à droite (tablette, ordinateur) ;
+   sur téléphone tout s'empile : panneau du haut, plan, puis le reste. */
 :root{
-  /* Couleurs de la déco du plan de Beauport : vert foncé, olive, merisier, rose vintage ; jaune d'œuf pour la sélection. */
+  /* Couleurs de la déco du plan de Beauport (vert foncé, olive, beige) et jaune d'œuf pour la sélection.
+     Les couleurs de serveurs suivent une palette vérifiée pour le daltonisme. */
   --bg:#eef1ea; --surface:#ffffff; --surface-2:#e4eadf; --fg:#18231c; --muted:#58675c; --line:#d2dacc;
   --vert:#1f4a33; --vert-texte:#ffffff; --jaune:#f3b61f; --jaune-texte:#2a1f00; --blanc-oeuf:#fbfaf5;
   --bande:#1d3a2a; --bande-texte:#f4f7f1; --bande-doux:#b7cabb; --bande-ligne:rgb(255 255 255 / .16); --bande-chip:rgb(255 255 255 / .07);
   --ombre:0 1px 2px rgb(24 45 30 / .06),0 14px 30px -20px rgb(24 45 30 / .4);
   --focus:#2f6fd6; --warn:#b45309; --danger:#b91c1c; --ok:#4cc27a;
-  --s1:#b4532a; --s2:#5f7a1e; --s3:#b03f6e; --s4:#3b6ea8; --s5:#6a4fb0; --on-s:#ffffff;
+  --s1:#1baf7a; --s2:#eb6834; --s3:#2a78d6; --s4:#e87ba4; --s5:#6250d6;
+  --on-s1:#0b1a12; --on-s2:#1f0d05; --on-s3:#ffffff; --on-s4:#2a0d18; --on-s5:#ffffff;
   --fond-filtre:none; --fond-opacite:.55;
   --f-texte:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
   --f-titre:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
@@ -32,7 +34,8 @@
   --bande:#132a1d; --bande-texte:#eef5ef; --bande-doux:#9fb8a6; --bande-ligne:rgb(255 255 255 / .12); --bande-chip:rgb(255 255 255 / .05);
   --ombre:0 1px 2px rgb(0 0 0 / .35);
   --focus:#60a5fa; --warn:#fbbf24; --danger:#f87171; --ok:#4ade80;
-  --s1:#f08a5d; --s2:#a8c95a; --s3:#f07aa8; --s4:#7fb0ea; --s5:#a993ec; --on-s:#0e1511;
+  --s1:#199e70; --s2:#d95926; --s3:#3987e5; --s4:#d55181; --s5:#9085e9;
+  --on-s1:#0e1511; --on-s2:#0e1511; --on-s3:#0e1511; --on-s4:#0e1511; --on-s5:#0e1511;
   --fond-filtre:invert(1); --fond-opacite:.36; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#0e1511; --surface:#16201a; --surface-2:#1f2b23; --fg:#e7efe8; --muted:#9db0a2; --line:#2b3a30;
@@ -40,12 +43,14 @@
   --bande:#132a1d; --bande-texte:#eef5ef; --bande-doux:#9fb8a6; --bande-ligne:rgb(255 255 255 / .12); --bande-chip:rgb(255 255 255 / .05);
   --ombre:0 1px 2px rgb(0 0 0 / .35);
   --focus:#60a5fa; --warn:#fbbf24; --danger:#f87171; --ok:#4ade80;
-  --s1:#f08a5d; --s2:#a8c95a; --s3:#f07aa8; --s4:#7fb0ea; --s5:#a993ec; --on-s:#0e1511;
+  --s1:#199e70; --s2:#d95926; --s3:#3987e5; --s4:#d55181; --s5:#9085e9;
+  --on-s1:#0e1511; --on-s2:#0e1511; --on-s3:#0e1511; --on-s4:#0e1511; --on-s5:#0e1511;
   --fond-filtre:invert(1); --fond-opacite:.36; color-scheme:dark}
 *{box-sizing:border-box}
 html,body{height:100%}
 body{margin:0;background:var(--bg);color:var(--fg);font:400 15px/1.45 var(--f-texte);-webkit-font-smoothing:antialiased}
-.s1{--c:var(--s1)} .s2{--c:var(--s2)} .s3{--c:var(--s3)} .s4{--c:var(--s4)} .s5{--c:var(--s5)}
+.s1{--c:var(--s1);--on-c:var(--on-s1)} .s2{--c:var(--s2);--on-c:var(--on-s2)} .s3{--c:var(--s3);--on-c:var(--on-s3)} .s4{--c:var(--s4);--on-c:var(--on-s4)} .s5{--c:var(--s5);--on-c:var(--on-s5)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .app{display:flex;flex-direction:column;gap:12px;min-height:100%;padding-block:12px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .barre{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;background:var(--bande);color:var(--bande-texte);border-radius:16px;padding:12px 14px 12px 16px;box-shadow:var(--ombre)}
 .marque{display:flex;align-items:center;gap:12px;margin-right:auto;min-width:0}
@@ -57,43 +62,52 @@ body{margin:0;background:var(--bg);color:var(--fg);font:400 15px/1.45 var(--f-te
 .chiffres{display:flex;flex-wrap:wrap;gap:6px}
 .chip{display:inline-flex;align-items:baseline;gap:5px;padding:5px 11px;border:1px solid var(--bande-ligne);border-radius:999px;background:var(--bande-chip);font-size:13px;color:var(--bande-doux);white-space:nowrap}
 .chip b{font:600 18px/1 var(--f-titre);color:var(--bande-texte);font-variant-numeric:tabular-nums}
-.chip i{width:8px;height:8px;border-radius:50%;background:var(--muted);display:inline-block;align-self:center}
+.chip i{width:8px;height:8px;border-radius:50%;background:var(--bande-doux);display:inline-block;align-self:center}
 .chip.direct i{background:var(--ok)} .chip.lent i,.chip.erreur i{background:var(--warn)}
+.chip.alerte{background:var(--jaune);border-color:var(--jaune);color:var(--jaune-texte);font-weight:500}
+.chip.alerte b{color:var(--jaune-texte)}
+.chip.alerte .point{background:var(--jaune-texte);align-self:center}
+.actions-barre{display:flex;flex-wrap:wrap;gap:8px}
 button{font:500 15px/1.2 var(--f-texte);color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 13px;cursor:pointer;min-height:40px;transition:background-color .15s,border-color .15s,transform .1s}
 button:hover{border-color:var(--muted)}
 button:active{transform:translateY(1px)}
-button:focus-visible,input:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 button.prim{background:var(--vert);color:var(--vert-texte);border-color:var(--vert);font-weight:600}
 button.prim:hover{background:color-mix(in srgb,var(--vert) 88%,var(--fg))}
 button.on{background:var(--jaune);color:var(--jaune-texte);border-color:var(--jaune);font-weight:600}
-.barre button{background:transparent;color:var(--bande-texte);border-color:var(--bande-ligne)}
-.barre button:hover{border-color:var(--bande-doux)}
-.barre button.on{background:var(--jaune);color:var(--jaune-texte);border-color:var(--jaune)}
-@media (prefers-reduced-motion:reduce){button{transition:none}}
 button.lien{border:0;background:none;padding:4px 2px;min-height:0;color:var(--muted);text-decoration:underline;text-underline-offset:3px;font-size:14px}
 button.danger{color:var(--danger);border-color:color-mix(in srgb,var(--danger) 45%,var(--line))}
 button[disabled]{opacity:.55;cursor:default}
+.barre button,.barre select{background:transparent;color:var(--bande-texte);border:1px solid var(--bande-ligne)}
+.barre button:hover,.barre select:hover{border-color:var(--bande-doux)}
+.barre button.on{background:var(--jaune);color:var(--jaune-texte);border-color:var(--jaune)}
+.barre select{font:500 15px var(--f-texte);border-radius:10px;padding:8px 10px;min-height:40px;max-width:190px}
+.barre select option{color:var(--fg);background:var(--surface)}
+@media (prefers-reduced-motion:reduce){button{transition:none}}
 .corps{display:grid;gap:12px;grid-template-columns:minmax(0,1fr);grid-template-areas:"haut" "plan" "bas"}
 .cote{display:contents}
 #haut{grid-area:haut;display:flex;flex-direction:column;gap:12px;min-width:0}
 #bas{grid-area:bas;display:flex;flex-direction:column;gap:12px;min-width:0}
+#haut:empty,#bas:empty{display:none}
 .zone-plan{grid-area:plan;display:flex;flex-direction:column;gap:8px;min-width:0}
 .outils{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
 .outils button{min-height:34px;padding:5px 11px;font-size:14px}
+.zoomval{min-width:50px;text-align:center;font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums}
+.astuce{font-size:13px;color:var(--muted)}
 .legende{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:13px;color:var(--muted);margin-left:auto}
 .legende span{display:inline-flex;align-items:center;gap:5px}
 .legende i{display:inline-block;width:14px;height:11px;border-radius:3px}
-.lg-libre{background:color-mix(in srgb,var(--s2) 15%,var(--surface));border:2px solid var(--s2)}
-.lg-occ{background:var(--s2)}
-.lg-add{background:var(--s2);outline:2px solid var(--warn);outline-offset:1px}
-.lg-long{background:var(--s2);outline:2px solid var(--danger);outline-offset:1px}
+.lg-libre{background:color-mix(in srgb,var(--s3) 15%,var(--surface));border:2px solid var(--s3)}
+.lg-occ{background:var(--s3)}
+.lg-add{background:var(--s3);outline:2px solid var(--warn);outline-offset:1px}
+.lg-long{background:var(--s3);outline:2px solid var(--danger);outline-offset:1px}
+.lg-pret{border:2px dashed var(--jaune)}
 .lg-ferme{background:var(--surface-2);border:2px dashed var(--line)}
-.cadre{background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:auto;max-height:76vh;overscroll-behavior:contain;box-shadow:var(--ombre)}
-.cadre svg{display:block;width:calc(var(--z,1)*100%);height:auto;margin:0 auto}
+.cadre{display:flex;background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:auto;max-height:76vh;overscroll-behavior:contain;box-shadow:var(--ombre)}
+.cadre svg{display:block;flex:none;margin:auto}
 #plan{user-select:none;-webkit-user-select:none}
 .cadre.peut-glisser{cursor:grab}
 .cadre.glisse,.cadre.glisse #plan .tb{cursor:grabbing}
-.astuce{font-size:13px;color:var(--muted)}
 .carte{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:15px;display:flex;flex-direction:column;gap:10px;min-width:0;box-shadow:var(--ombre)}
 .carte h2{margin:0;font:600 15px/1.2 var(--f-titre);letter-spacing:.09em;text-transform:uppercase;color:var(--vert)}
 .tete{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
@@ -102,18 +116,20 @@ button[disabled]{opacity:.55;cursor:default}
 .meta{display:flex;flex-wrap:wrap;gap:4px 12px;color:var(--muted);font-size:14px}
 .pastille{display:inline-flex;align-items:center;gap:6px;font-weight:500;color:var(--fg)}
 .pastille i{width:12px;height:12px;border-radius:50%;background:var(--c);flex:none}
-.note{font-size:14px;padding:8px 10px;border-radius:8px;background:var(--surface-2)}
+.note{font-size:14px;padding:8px 10px;border-radius:10px;background:var(--surface-2)}
 .note.alerte{background:color-mix(in srgb,var(--warn) 16%,var(--surface))}
 .aide{margin:0;font-size:13px;color:var(--muted)}
 .tailles{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:6px}
 .tailles button{padding:0;min-height:46px;font:600 22px/1 var(--f-titre)}
+.vitesses{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.vitesses button{padding:0;min-height:40px;font:600 18px/1 var(--f-titre)}
 .pas{display:flex;align-items:center;gap:4px}
 .pas button{min-height:34px;width:34px;padding:0;font-size:18px}
 .pas output{min-width:64px;text-align:center;font-variant-numeric:tabular-nums}
 .pas output b{font:700 20px var(--f-titre)}
 .tour{display:flex;align-items:center;gap:6px;font-size:14px;color:var(--muted);flex-wrap:wrap}
 .champ{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
-input[type=text]{font:400 15px var(--f-texte);color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-height:40px;width:100%}
+input[type=text]{font:400 15px var(--f-texte);color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-height:40px;width:100%}
 .rang{display:flex;flex-wrap:wrap;gap:8px}
 .rang>button{flex:1 1 auto}
 .etapes{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:6px}
@@ -121,58 +137,83 @@ input[type=text]{font:400 15px var(--f-texte);color:var(--fg);background:var(--b
 .liste{list-style:none;margin:0;padding:0}
 .liste li{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line)}
 .liste li:first-child{border-top:0;padding-top:2px}
+.liste li.pret{background:color-mix(in srgb,var(--jaune) 18%,var(--surface));border-radius:12px;padding:10px;border-top-color:transparent;margin-top:4px}
+.liste li.pret+li{border-top-color:transparent}
 .liste .q{flex:1;min-width:0}
 .liste .q b{display:block;font-weight:600}
 .liste .q small{color:var(--muted);font-size:13px}
+.liste li.pret .q small{color:var(--fg)}
 .liste button{min-height:34px;padding:5px 11px;font-size:14px}
+.point{width:9px;height:9px;border-radius:50%;background:var(--jaune);display:inline-block;flex:none;animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{50%{transform:scale(1.45);opacity:.55}}
+.etat-sim{display:inline-flex;align-items:center;gap:6px;font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums}
 .eta{font:700 20px var(--f-titre);font-variant-numeric:tabular-nums;white-space:nowrap}
-.badge{font-style:normal;font-size:12px;font-weight:600;padding:2px 7px;border-radius:999px;background:var(--jaune);color:var(--jaune-texte);margin-left:6px;vertical-align:1px}
-.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.badge{font-style:normal;font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;background:var(--jaune);color:var(--jaune-texte);margin-left:6px;vertical-align:1px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
 .seg button{border:0;border-radius:0;min-height:32px;padding:5px 10px;font-size:13px}
 .vide{color:var(--muted);font-size:14px;margin:0}
 .pinceau{width:40px;height:40px;padding:0;flex:none;background:color-mix(in srgb,var(--c) 18%,var(--surface));border:2px solid var(--c)}
 .pinceau.on{background:var(--c);border-color:var(--c);box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--c)}
-.bascule{display:flex;align-items:center;gap:6px;font-size:14px;white-space:nowrap}
-.bascule input{width:18px;height:18px;accent-color:var(--c)}
+.bascule{display:flex;align-items:center;gap:8px;font-size:14px}
+.bascule input{width:18px;height:18px;flex:none;accent-color:var(--c,var(--vert))}
 .tableau{overflow-x:auto}
 .tableau table{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
 .tableau th{font-weight:500;color:var(--muted);text-align:right;padding:4px 6px;border-bottom:1px solid var(--line);font-size:13px}
 .tableau td{text-align:right;padding:6px;border-bottom:1px solid var(--line)}
 .tableau th:first-child,.tableau td:first-child{text-align:left;padding-left:0}
 .tableau td b{font-weight:600}
+.tuiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.tuile{background:var(--surface-2);border-radius:12px;padding:10px 12px;min-width:0}
+.tuile small{display:block;color:var(--muted);font-size:13px}
+.tuile b{display:block;font:700 26px/1.15 var(--f-marque);letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.graph{position:relative}
+.graph svg{display:block;width:100%;height:auto;overflow:visible}
+.graph .grille{stroke:var(--line);stroke-width:1}
+.graph .axe{stroke:var(--muted);stroke-width:1}
+.graph text{font:500 11px var(--f-texte);fill:var(--muted)}
+.graph .bar{fill:var(--vert)}
+.graph .bar.survol{fill:var(--jaune)}
+.graph .cible{fill:transparent;cursor:default;outline:none}
+.bulle{position:absolute;transform:translate(-50%,-100%);background:var(--bande);color:var(--bande-texte);font-size:13px;padding:6px 9px;border-radius:8px;white-space:nowrap;pointer-events:none;z-index:2}
+.parts li{flex-wrap:wrap}
+.piste{height:10px;border-radius:5px;background:var(--surface-2);margin-top:6px;overflow:hidden}
+.rempli{height:100%;border-radius:5px;background:var(--c)}
+.top{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:4px;font-variant-numeric:tabular-nums}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--bande);color:var(--bande-texte);padding:10px 16px;border-radius:10px;font-weight:500;max-width:min(92vw,520px);z-index:20;box-shadow:0 6px 24px rgb(0 0 0 / .2)}
 #plan text{text-anchor:middle;dominant-baseline:central;pointer-events:none}
 #plan .fond{opacity:var(--fond-opacite);filter:var(--fond-filtre);pointer-events:none}
 #plan .repere{font:600 20px var(--f-titre);letter-spacing:.08em;text-transform:uppercase;fill:var(--muted)}
-#plan .tb{cursor:pointer;outline:none}
+#plan .tb{cursor:pointer;outline:none;transition:opacity .2s}
 #plan .tb .f{fill:color-mix(in srgb,var(--c) 15%,var(--surface));stroke:var(--c);stroke-width:2.5}
 #plan .tb:hover .f{stroke-width:4.5}
 #plan .tb:focus-visible .f{stroke:var(--focus);stroke-width:5}
 #plan .tb .num{font:600 19px var(--f-titre);fill:color-mix(in srgb,var(--c) 70%,var(--fg))}
 #plan .tb.occ .f{fill:var(--c)}
-#plan .tb.occ .num{font-size:16px;fill:color-mix(in srgb,var(--on-s) 82%,var(--c))}
-#plan .tb.occ .min{font:700 24px var(--f-titre);fill:var(--on-s)}
+#plan .tb.occ .num{font-size:16px;fill:color-mix(in srgb,var(--on-c) 82%,var(--c))}
+#plan .tb.occ .min{font:700 24px var(--f-titre);fill:var(--on-c)}
 #plan .tb.occ.active .f{stroke:var(--fg);stroke-width:4}
 #plan .tb.ferme .f{fill:var(--surface-2);stroke:var(--line);stroke-dasharray:6 4}
 #plan .tb.ferme .num{fill:var(--muted)}
+#plan .tb.autre{opacity:.28}
 #plan .anneau{fill:none;stroke-width:5;pointer-events:none}
 #plan .anneau.addition{stroke:var(--warn)}
 #plan .anneau.long{stroke:var(--danger)}
+#plan .pret{fill:none;stroke:var(--jaune);stroke-width:4;stroke-dasharray:7 5;pointer-events:none}
 #plan .sel{fill:none;stroke:var(--fg);stroke-width:4;stroke-dasharray:10 6;pointer-events:none;animation:marche .9s linear infinite}
 @keyframes marche{to{stroke-dashoffset:-16}}
-@media (prefers-reduced-motion:reduce){#plan .sel{animation:none}}
+@media (prefers-reduced-motion:reduce){#plan .sel,.point{animation:none}#plan .tb{transition:none}}
 @media (min-width:1000px){
   .app{height:100%;min-height:0}
   .corps{flex:1;min-height:0;grid-template-columns:minmax(0,1fr) 384px;grid-template-areas:"plan cote"}
   .cote{display:flex;flex-direction:column;gap:12px;grid-area:cote;overflow:auto;min-height:0;padding-right:2px}
   .zone-plan{min-height:0}
   .cadre{flex:1;min-height:0;max-height:none}
-  .cadre.ajuste svg{width:100%;height:100%}
 }
 @media (max-width:520px){
   .tailles{grid-template-columns:repeat(4,minmax(0,1fr))}
   .marque h1{font-size:23px}
   .legende{margin-left:0}
+  .tuile b{font-size:22px}
 }
 </style>
 <style>[hidden]{display:none!important}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}img{max-width:100%}</style>
@@ -182,19 +223,25 @@ input[type=text]{font:400 15px var(--f-texte);color:var(--fg);background:var(--b
   <header class="barre">
     <div class="marque"><span class="oeuf" aria-hidden="true"></span><div class="titres"><h1>Plan de salle</h1><span>Beauport · 80 tables · 160 places</span></div></div>
     <div class="chiffres" id="chiffres"></div>
-    <button id="b-sections" data-action="sections" aria-pressed="false">Sections</button>
+    <div class="actions-barre">
+      <select id="vue" aria-label="Vue de cet appareil"></select>
+      <button id="b-bilan" data-action="bilan" aria-pressed="false">Bilan</button>
+      <button id="b-sections" data-action="sections" aria-pressed="false">Sections</button>
+    </div>
   </header>
   <main class="corps">
     <section class="zone-plan" aria-label="Plan de la salle">
       <div class="outils">
         <button data-action="zoom-moins" aria-label="Dézoomer">−</button>
-        <button data-action="zoom-ajuster">Ajuster</button>
+        <span class="zoomval" id="zoom-val" aria-live="polite">100 %</span>
         <button data-action="zoom-plus" aria-label="Zoomer">+</button>
+        <button data-action="zoom-ajuster">Ajuster</button>
         <button data-action="pivot" id="b-pivot" aria-pressed="false">Pivoter le plan</button>
         <span class="astuce">Maintenez le clic pour déplacer le plan · Ctrl + molette pour zoomer</span>
         <div class="legende" aria-hidden="true">
           <span><i class="lg-libre"></i>Libre</span><span><i class="lg-occ"></i>Occupée, minutes restantes</span>
-          <span><i class="lg-add"></i>Addition demandée</span><span><i class="lg-long"></i>Plus long que prévu</span><span><i class="lg-ferme"></i>Section fermée</span>
+          <span><i class="lg-add"></i>Addition demandée</span><span><i class="lg-long"></i>Plus long que prévu</span>
+          <span><i class="lg-pret"></i>Gardée pour la liste d'attente</span><span><i class="lg-ferme"></i>Section fermée</span>
         </div>
       </div>
       <div class="cadre" id="cadre"><svg id="plan" viewBox="0 0 1290 1460" role="group" aria-label="Tables de la salle"></svg></div>
@@ -234,20 +281,35 @@ function sectionsOrigine(){const a={};for(let n=1;n<=NB;n++)a[n]=n<=25?'s1':(n<=
 const COULEURS=['s1','s2','s3','s4','s5'];
 const CONFIG_DEFAUT={serveurs:[{id:'s1',nom:'Serveur 1',actif:true},{id:'s2',nom:'Serveur 2',actif:true},{id:'s3',nom:'Serveur 3',actif:true}],affectation:sectionsOrigine(),mode:'tour'};
 const ETAPES=[['assis','Assis'],['commande','Commande prise'],['plats','Plats servis'],['dessert','Dessert, café'],['addition','Addition demandée']];
+const ORDRE_ETAPE=Object.fromEntries(ETAPES.map(([k],i)=>[k,i]));
+const LIB_ETAPE=Object.fromEntries(ETAPES);
+const SUIVANTE={assis:'commande',commande:'plats',plats:'dessert',dessert:'addition'};
+const BOUTON_SUIVANT={assis:'Commande prise',commande:'Plats servis',plats:'Dessert, café',dessert:'Addition demandée',addition:'Libérer'};
 const PART={assis:1,commande:.85,plats:.6,dessert:.25}; // part du repas qui reste au début de chaque étape
 const BASE={a:45,b:55,c:65,d:75};                      // durées de départ (min), corrigées par l'historique
 const CAT=p=>p<=2?'a':p<=4?'b':p<=6?'c':'d';
 const CAT_LIB={a:'1 ou 2 pers.',b:'3 ou 4 pers.',c:'5 ou 6 pers.',d:'7 pers. et plus'};
+// Simulation : le restaurant simulé mange un peu autrement que les durées de départ, pour qu'on voie l'apprentissage.
+const VRAIE={a:40,b:58,c:70,d:85};
+const AFFLUENCE={7:.3,8:.55,9:.8,10:.85,11:.65,12:.5,13:.28}; // groupes par minute, de 7 h à 14 h (pointe du brunch vers 10 h)
+const NOMS=['Tremblay','Gagnon','Roy','Côté','Bouchard','Gauthier','Morin','Lavoie','Fortin','Gagné','Ouellet','Pelletier','Bélanger','Lévesque','Bergeron','Leblanc','Paquette','Girard','Simard','Boucher','Caron','Beaulieu','Cloutier','Dubé','Poirier'];
+const VITESSES=[0,10,30,60,120];
+const ZOOMS=[1,1.25,1.5,1.75,2,2.5,3,4]; // multiples de la taille « Ajuster »
 
 // ---------- État ----------
 const clone=o=>JSON.parse(JSON.stringify(o));
 const S={config:clone(CONFIG_DEFAUT),prochain:null,visites:{},attente:{},repas:[]};
-const UI={n:2,nom:'',prop:null,manuel:null,manuelAttente:null,selVisite:null,edition:false,pinceau:'s1',zoom:1,pivot:false,sync:'connexion',confirmFin:0,chargement:false,lecture:false,configSale:false};
-let ST=null;
+let decalage=0;                                  // avance de l'horloge simulée sur l'heure réelle (ms)
+const maintenant=()=>Date.now()+decalage;
+const UI={n:2,nom:'',prop:null,manuel:null,manuelAttente:null,selVisite:null,panneau:'normal',vueServeur:null,pinceau:'s1',zoom:1,pivot:false,
+  sync:'connexion',confirmFin:0,confirmHisto:0,chargement:false,configSale:false,vitesse:0,autoPlacer:true,simT:null,pretsConnus:null};
+let ST=null,PRETS={};
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const hm=t=>{const d=new Date(t);return d.getHours()+' h '+String(d.getMinutes()).padStart(2,'0');};
-const minutesDepuis=t=>Math.max(0,Math.round((Date.now()-t)/6e4));
+const minutesDepuis=t=>Math.max(0,Math.round((maintenant()-t)/6e4));
+const somme=(a,f)=>a.reduce((x,y)=>x+f(y),0);
+const pluriel=(n,s,p)=>n+' '+(n>1?(p||s+'s'):s);
 
 function normaliserConfig(d){
   const c=clone(CONFIG_DEFAUT);
@@ -268,6 +330,7 @@ const infoServeur=id=>S.config.serveurs.find(s=>s.id===id);
 const nomServeur=id=>infoServeur(id)?.nom||'Serveur retiré';
 const actif=id=>!!infoServeur(id)?.actif;
 const actifs=()=>S.config.serveurs.filter(s=>s.actif).map(s=>s.id);
+const vueServeur=()=>UI.vueServeur&&infoServeur(UI.vueServeur)?UI.vueServeur:null;
 function occupation(){const m={};for(const [id,v] of Object.entries(S.visites))v.tables.forEach(t=>m[t]=id);return m;}
 function prochainActuel(){const a=actifs();return a.includes(S.prochain)?S.prochain:(a[0]||null);}
 function suivant(s){const a=actifs();if(!a.length)return null;const i=a.indexOf(s);return a[(i+1)%a.length];}
@@ -280,19 +343,20 @@ function etiquette(ts){const s=[...ts].sort((a,b)=>a-b);if(s.length===1)return S
 function stats(){
   const r={};
   for(const k in BASE){
-    const ds=S.repas.filter(x=>CAT(x.p)===k).slice(-40).map(x=>x.d).sort((a,b)=>a-b);
+    const tous=S.repas.filter(x=>x&&Number.isFinite(x.p)&&Number.isFinite(x.d)&&CAT(x.p)===k);
+    const ds=tous.slice(-40).map(x=>x.d).sort((a,b)=>a-b);
     let med=null;if(ds.length){const m=Math.floor(ds.length/2);med=ds.length%2?ds[m]:Math.round((ds[m-1]+ds[m])/2);}
     const w=ds.length/(ds.length+5); // plus il y a de repas observés, plus ils comptent
-    r[k]={n:ds.length,med,est:med==null?BASE[k]:Math.round((1-w)*BASE[k]+w*med)};
+    r[k]={n:ds.length,tot:tous.length,med,est:med==null?BASE[k]:Math.round((1-w)*BASE[k]+w*med)};
   }
   return r;
 }
 function reste(v){
-  const est=ST[CAT(v.pers)].est;const depuis=(Date.now()-(v.depuis||v.arrivee))/6e4;
+  const est=ST[CAT(v.pers)].est;const depuis=(maintenant()-(v.depuis||v.arrivee))/6e4;
   if(v.etape==='addition')return Math.max(1,Math.round(8-depuis));
   return Math.max(3,Math.round(est*(PART[v.etape]??1)-depuis));
 }
-const enRetard=v=>(Date.now()-v.arrivee)/6e4>ST[CAT(v.pers)].est+10;
+const enRetard=v=>(maintenant()-v.arrivee)/6e4>ST[CAT(v.pers)].est+10;
 
 // ---------- Attribution : fenêtres de tables voisines dans une rangée ----------
 const cacheF={};
@@ -324,8 +388,8 @@ function ordreServeurs(){
   if(S.config.mode==='charge'){const ch=chargeParServeur();ord=ord.map((id,j)=>({id,j,c:ch[id].couverts})).sort((x,y)=>x.c-y.c||x.j-y.j).map(x=>x.id);}
   return ord;
 }
-function proposer(n){
-  const cands=candidats(n,occupation());const liste=[];const sautes=[];
+function proposer(n,occ){
+  const cands=candidats(n,occ||occupation());const liste=[];const sautes=[];
   for(const s of ordreServeurs()){
     const siens=cands.filter(c=>!c.cheval&&c.serveur===s).sort((x,y)=>x.cout-y.cout||x.tables[0]-y.tables[0]);
     if(!siens.length){if(!liste.length)sautes.push(s);continue;}
@@ -344,13 +408,19 @@ function prevision(n){
   }
   return best;
 }
+// Liste d'attente : dans l'ordre d'arrivée, chaque groupe se voit garder les premières tables qui lui conviennent.
+function attenteTriee(){return Object.entries(S.attente).filter(([,x])=>x&&Number.isFinite(x.pers)&&x.pers>0&&Number.isFinite(x.ajout)).sort((a,b)=>a[1].ajout-b[1].ajout);}
+function calculerPrets(){const occ=occupation();const r={};for(const [id,a] of attenteTriee()){const l=proposer(a.pers,occ);if(l.length){r[id]=l[0];l[0].tables.forEach(t=>occ[t]='attente:'+id);}}return r;}
+function occSansReserves(saufId){const occ=occupation();for(const [id,c] of Object.entries(PRETS))if(id!==saufId)c.tables.forEach(t=>{if(!occ[t])occ[t]='attente:'+id;});return occ;}
 
 // ---------- Enregistrement : base partagée si disponible, sinon cet appareil ----------
 const CLE='plan-salle-v1',CLE_UI='plan-salle-ui-v1';
-function chargerLocal(){try{const d=JSON.parse(localStorage.getItem(CLE)||'null');if(d){S.config=normaliserConfig(d.config);S.prochain=d.prochain||null;S.visites=Object.fromEntries(Object.entries(d.visites||{}).filter(([,v])=>visiteValide(v)));S.attente=d.attente||{};S.repas=Array.isArray(d.repas)?d.repas:[];}}catch(e){}
-  try{const u=JSON.parse(localStorage.getItem(CLE_UI)||'null');if(u){UI.pivot=!!u.pivot;if(u.zoom)UI.zoom=u.zoom;}}catch(e){}}
-function sauverLocal(){if(store.db)return;try{localStorage.setItem(CLE,JSON.stringify({config:S.config,prochain:S.prochain,visites:S.visites,attente:S.attente,repas:S.repas}));}catch(e){}}
-function sauverUI(){try{localStorage.setItem(CLE_UI,JSON.stringify({pivot:UI.pivot,zoom:UI.zoom}));}catch(e){}}
+function chargerLocal(){
+  try{const d=JSON.parse(localStorage.getItem(CLE)||'null');if(d){S.config=normaliserConfig(d.config);S.prochain=d.prochain||null;S.visites=Object.fromEntries(Object.entries(d.visites||{}).filter(([,v])=>visiteValide(v)));S.attente=d.attente&&typeof d.attente==='object'?d.attente:{};S.repas=Array.isArray(d.repas)?d.repas:[];decalage=Number.isFinite(d.decalage)?d.decalage:0;}}catch(e){}
+  try{const u=JSON.parse(localStorage.getItem(CLE_UI)||'null');if(u){UI.pivot=!!u.pivot;if(ZOOMS.includes(u.zoom))UI.zoom=u.zoom;UI.vueServeur=u.vueServeur||null;UI.autoPlacer=u.autoPlacer!==false;}}catch(e){}
+}
+function sauverLocal(){if(store.db)return;try{localStorage.setItem(CLE,JSON.stringify({config:S.config,prochain:S.prochain,visites:S.visites,attente:S.attente,repas:S.repas,decalage}));}catch(e){}}
+function sauverUI(){try{localStorage.setItem(CLE_UI,JSON.stringify({pivot:UI.pivot,zoom:UI.zoom,vueServeur:UI.vueServeur,autoPlacer:UI.autoPlacer}));}catch(e){}}
 const files={};
 function ecrire(cle,fn){const p=(files[cle]||Promise.resolve()).then(()=>essayer(fn));files[cle]=p;return p;}
 async function essayer(fn){
@@ -386,27 +456,34 @@ const store={
   delAttente(id){if(this.db)return ecrire('a/'+id,()=>this.db.doc('attente/'+id).delete());delete S.attente[id];apresLocal();},
   setConfig(c){if(this.db)return ecrire('config',()=>this.db.doc('salle/config').set(c));S.config=c;apresLocal();},
   setRotation(p){if(this.db)return ecrire('rotation',()=>this.db.doc('salle/rotation').set({prochain:p}));S.prochain=p;apresLocal();},
-  ajouterRepas(e){const repas=[...S.repas,e].slice(-400);if(this.db)return ecrire('historique',()=>this.db.doc('salle/historique').set({repas}));S.repas=repas;apresLocal();}
+  ajouterRepas(e){const repas=[...S.repas,e].slice(-400);if(this.db)return ecrire('historique',()=>this.db.doc('salle/historique').set({repas}));S.repas=repas;apresLocal();},
+  viderRepas(){if(this.db)return ecrire('historique',()=>this.db.doc('salle/historique').set({repas:[]}));S.repas=[];apresLocal();}
 };
 const nouvelId=p=>p+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 
 // ---------- Actions ----------
+function entreeRepas(v,t){return{p:v.pers,d:Math.round((t-v.arrivee)/6e4),a:v.arrivee,f:t,s:v.serveur,tb:v.tables.slice(),w:v.attendu||0};}
 async function asseoir(tables,n,serveur,o={}){
-  const now=Date.now();const avant=prochainActuel();
-  await store.setVisite(nouvelId('v'),{tables:[...tables].sort((a,b)=>a-b),pers:n,serveur,arrivee:now,etape:'assis',depuis:now,nom:o.nom||''});
+  const now=maintenant();const avant=prochainActuel();const a=o.attenteId&&S.attente[o.attenteId];
+  await store.setVisite(nouvelId('v'),{tables:[...tables].sort((x,y)=>x-y),pers:n,serveur,arrivee:now,etape:'assis',depuis:now,nom:o.nom||'',attendu:a?Math.max(0,Math.round((now-a.ajout)/6e4)):0});
   if(o.attenteId)await store.delAttente(o.attenteId);
   if(o.auto||serveur===avant){const s=suivant(serveur);if(s&&s!==S.prochain)await store.setRotation(s);}
   toast(libTables(tables)+' · '+n+' pers. · '+nomServeur(serveur));
 }
 async function liberer(id){
-  const v=S.visites[id];if(!v)return;const d=minutesDepuis(v.arrivee);
-  if(!v.exemple&&d>=5&&d<=300)await store.ajouterRepas({p:v.pers,d,f:Date.now()});
+  const v=S.visites[id];if(!v)return;const t=maintenant();const d=Math.round((t-v.arrivee)/6e4);
+  if(!v.exemple&&d>=5&&d<=300)await store.ajouterRepas(entreeRepas(v,t));
   await store.delVisite(id);toast(libTables(v.tables)+(v.tables.length>1?' libérées':' libérée'));
 }
-function faireProposition(n,nom,attenteId){const liste=proposer(n);UI.prop={n,nom,attenteId,liste,idx:0,prev:liste.length?null:prevision(n)};UI.manuel=null;UI.selVisite=null;}
+function faireProposition(n,nom,attenteId){
+  let liste=proposer(n,occSansReserves(attenteId));
+  const garde=attenteId&&PRETS[attenteId];
+  if(garde)liste=[Object.assign({},garde,{sautes:[]}),...liste.filter(c=>c.tables.join()!==garde.tables.join())];
+  UI.prop={n,nom,attenteId,liste,idx:0,prev:liste.length?null:prevision(n)};UI.manuel=null;UI.selVisite=null;
+}
 async function chargerExemple(){
   UI.chargement=true;rendre();
-  const occ={};const now=Date.now();const tailles=[2,2,4,1,2,3,4,2,2,6,2,4,5,2,3,2,4,2,1,2,2,4,3,2,2,6,2,4,2,2,3,2];const lot=[];
+  const occ={};const now=maintenant();const tailles=[2,2,4,1,2,3,4,2,2,6,2,4,5,2,3,2,4,2,1,2,2,4,3,2,2,6,2,4,2,2,3,2];const lot=[];
   for(const n of tailles){
     const cs=candidats(n,occ).filter(c=>!c.cheval).sort(()=>Math.random()-.5).sort((a,b)=>a.cout-b.cout);if(!cs.length)continue;
     const c=cs[Math.floor(Math.random()*Math.min(6,cs.length))];c.tables.forEach(t=>occ[t]='x');
@@ -435,9 +512,10 @@ async function enregistrerConfig(){
 }
 
 function toucherTable(n){
-  if(UI.edition){if(!infoServeur(UI.pinceau))return;S.config.affectation[n]=UI.pinceau;sauverConfigBientot();rendre();return;}
+  if(UI.panneau==='sections'){if(!infoServeur(UI.pinceau))return;S.config.affectation[n]=UI.pinceau;sauverConfigBientot();rendre();return;}
   const occ=occupation();
   if(occ[n]){UI.selVisite=occ[n];UI.prop=null;UI.manuel=null;rendre();return;}
+  if(vueServeur()){toast('C\'est l\'accueil qui attribue les tables : choisissez « Vue accueil » pour asseoir un groupe.');return;}
   if(!actif(serveurDe(n))){toast('Section fermée : ouvrez-la dans « Sections ».');return;}
   UI.selVisite=null;
   if(!UI.manuel){UI.manuel=new Set();UI.manuelAttente=UI.prop?UI.prop.attenteId:null;if(UI.prop){UI.n=UI.prop.n;UI.nom=UI.prop.nom||UI.nom;}UI.prop=null;}
@@ -446,30 +524,86 @@ function toucherTable(n){
   rendre();
 }
 
+// ---------- Simulation accélérée (toujours sur cet appareil) ----------
+function poisson(l){if(l<=0)return 0;let k=0,p=1;const L=Math.exp(-l);do{k++;p*=Math.random();}while(p>L);return k-1;}
+function tirerTaille(){const r=Math.random();return r<.1?1:r<.55?2:r<.67?3:r<.87?4:r<.92?5:r<.98?6:7+Math.floor(Math.random()*2);}
+function tirerDuree(n){return Math.round(VRAIE[CAT(n)]*(.75+Math.random()*.5));}
+function simAsseoir(c,n,nom,attenteId,t){
+  const a=attenteId&&S.attente[attenteId];
+  S.visites[nouvelId('v')]={tables:[...c.tables].sort((x,y)=>x-y),pers:n,serveur:c.serveur,arrivee:t,etape:'assis',depuis:t,nom:nom||'',duree:tirerDuree(n),attendu:a?Math.max(0,Math.round((t-a.ajout)/6e4)):0};
+  if(attenteId)delete S.attente[attenteId];
+  const s=suivant(c.serveur);if(s)S.prochain=s;
+}
+function etapeSimulation(t){
+  // 1. Les repas avancent ; ceux qui sont finis libèrent leurs tables (et entrent dans l'historique).
+  for(const [id,v] of Object.entries(S.visites)){
+    if(!v.duree)v.duree=tirerDuree(v.pers);
+    const f=(t-v.arrivee)/6e4/v.duree;
+    if(f>=1){const d=Math.round((t-v.arrivee)/6e4);if(!v.exemple&&d>=5)S.repas=[...S.repas,entreeRepas(v,t)].slice(-400);delete S.visites[id];continue;}
+    const e=f>=.9?'addition':f>=.75?'dessert':f>=.35?'plats':f>=.1?'commande':'assis';
+    if(ORDRE_ETAPE[e]>(ORDRE_ETAPE[v.etape]??0)){v.etape=e;v.depuis=t;}
+  }
+  // 2. L'accueil place les groupes en attente dont la table est prête depuis une minute.
+  if(UI.autoPlacer){const prets=calculerPrets();for(const [id,c] of Object.entries(prets)){const a=S.attente[id];if(!a)continue;if(!a.pret){a.pret=t;continue;}if(t-a.pret>=6e4)simAsseoir(c,a.pers,a.nom,id,t);}}
+  // 3. De nouveaux groupes arrivent selon l'heure ; s'il y a déjà une file, ils s'y ajoutent.
+  const k=poisson(AFFLUENCE[new Date(t).getHours()]||0);
+  for(let i=0;i<k;i++){
+    const n=tirerTaille();const nom=NOMS[Math.floor(Math.random()*NOMS.length)];
+    if(!attenteTriee().length){const l=proposer(n);if(l.length){simAsseoir(l[0],n,nom,null,t);continue;}}
+    S.attente[nouvelId('a')]={nom,pers:n,ajout:t};
+  }
+}
+function preparerSimulation(){
+  if(store.db){passerEnLocal();toast('La simulation tourne sur cet appareil seulement.');}
+  if(UI.simT==null||UI.simT>maintenant())UI.simT=maintenant();
+}
+let dernierTick=Date.now(),dernierRendu=Date.now();
+function tick(){
+  const now=Date.now();const dt=Math.min(5000,now-dernierTick);dernierTick=now;
+  if(UI.vitesse>0&&!store.db){
+    decalage+=dt*(UI.vitesse-1);
+    const t=maintenant();if(UI.simT==null||UI.simT>t)UI.simT=t;
+    let pas=0;while(UI.simT+6e4<=t&&pas<300){UI.simT+=6e4;ST=stats();etapeSimulation(UI.simT);pas++;}
+    sauverLocal();rendre();dernierRendu=now;
+  }else if(now-dernierRendu>=20000){rendre();dernierRendu=now;}
+}
+
 const ACTIONS={
   taille:el=>{UI.n=+el.dataset.n;if(UI.prop)faireProposition(UI.n,UI.prop.nom,UI.prop.attenteId);},
   moins:()=>{UI.n=Math.max(1,UI.n-1);if(UI.prop)faireProposition(UI.n,UI.prop.nom,UI.prop.attenteId);},
   plus:()=>{UI.n=Math.min(20,UI.n+1);if(UI.prop)faireProposition(UI.n,UI.prop.nom,UI.prop.attenteId);},
   proposer:()=>faireProposition(UI.n,UI.nom.trim(),null),
-  'attente-ajout':async()=>{await store.setAttente(nouvelId('a'),{nom:UI.nom.trim(),pers:UI.n,ajout:Date.now()});UI.nom='';toast('Ajouté à la liste d\'attente');},
+  'attente-ajout':async()=>{await store.setAttente(nouvelId('a'),{nom:UI.nom.trim(),pers:UI.n,ajout:maintenant()});UI.nom='';toast('Ajouté à la liste d\'attente');},
   'asseoir-prop':async()=>{const p=UI.prop;if(!p||!p.liste.length)return;const c=p.liste[p.idx];UI.prop=null;UI.nom='';await asseoir(c.tables,p.n,c.serveur,{auto:true,attenteId:p.attenteId,nom:p.nom});},
   autre:()=>{if(UI.prop)UI.prop.idx=(UI.prop.idx+1)%UI.prop.liste.length;},
   'annuler-prop':()=>{UI.prop=null;},
-  'prop-attente':async()=>{const p=UI.prop;UI.prop=null;UI.nom='';await store.setAttente(nouvelId('a'),{nom:p.nom||'',pers:p.n,ajout:Date.now()});toast('Ajouté à la liste d\'attente');},
+  'prop-attente':async()=>{const p=UI.prop;UI.prop=null;UI.nom='';await store.setAttente(nouvelId('a'),{nom:p.nom||'',pers:p.n,ajout:maintenant()});toast('Ajouté à la liste d\'attente');},
   'asseoir-manuel':async()=>{const ts=[...UI.manuel].sort((a,b)=>a-b);const att=UI.manuelAttente;const nom=UI.nom.trim();UI.manuel=null;UI.manuelAttente=null;UI.nom='';await asseoir(ts,UI.n,serveurDe(ts[0]),{attenteId:att,nom});},
   vider:()=>{UI.manuel=null;UI.manuelAttente=null;},
-  etape:async el=>{const id=UI.selVisite;if(id)await store.majVisite(id,{etape:el.dataset.e,depuis:Date.now()});},
+  etape:async el=>{const id=UI.selVisite;if(id)await store.majVisite(id,{etape:el.dataset.e,depuis:maintenant()});},
+  'etape-suivante':async el=>{const id=el.dataset.v;const v=S.visites[id];if(!v)return;if(v.etape==='addition')return liberer(id);await store.majVisite(id,{etape:SUIVANTE[v.etape]||'commande',depuis:maintenant()});},
   liberer:async()=>{const id=UI.selVisite;UI.selVisite=null;await liberer(id);},
   'annuler-visite':async()=>{const id=UI.selVisite;UI.selVisite=null;await store.delVisite(id);toast('Place annulée');},
   'fermer-sel':()=>{UI.selVisite=null;},
   mode:async el=>{const c=clone(S.config);c.mode=el.dataset.m;S.config=c;await store.setConfig(c);},
   tour:async el=>{await store.setRotation(el.dataset.s);},
   'placer-attente':el=>{const a=S.attente[el.dataset.id];if(!a)return;UI.n=a.pers;faireProposition(a.pers,a.nom||'',el.dataset.id);},
+  'placer-pret':async el=>{const id=el.dataset.id;const c=PRETS[id],a=S.attente[id];if(!c||!a)return;await asseoir(c.tables,a.pers,c.serveur,{auto:true,attenteId:id,nom:a.nom});},
   'retirer-attente':async el=>{await store.delAttente(el.dataset.id);},
   exemple:()=>chargerExemple(),
   'fin-service':()=>{if(UI.confirmFin&&Date.now()-UI.confirmFin<8000)return finDeService();UI.confirmFin=Date.now();},
   'fin-garder':()=>{UI.confirmFin=0;},
-  sections:async()=>{UI.edition=!UI.edition;UI.prop=null;UI.manuel=null;UI.selVisite=null;if(!UI.edition)await enregistrerConfig();if(UI.edition&&!infoServeur(UI.pinceau))UI.pinceau=S.config.serveurs[0].id;},
+  vitesse:el=>{const v=+el.dataset.v;if(v>0)preparerSimulation();UI.vitesse=v;},
+  'sim-service':()=>{
+    preparerSimulation();
+    S.visites={};S.attente={};UI.prop=null;UI.manuel=null;UI.selVisite=null;UI.panneau='normal';
+    const d=new Date();d.setHours(7,0,0,0);decalage=d.getTime()-Date.now();UI.simT=maintenant();UI.vitesse=30;sauverLocal();
+    toast('Service simulé : ouverture à 7 h, le temps passe 30 fois plus vite');
+  },
+  'sim-reset':()=>{UI.vitesse=0;S.visites={};S.attente={};decalage=0;UI.simT=null;UI.prop=null;UI.manuel=null;UI.selVisite=null;sauverLocal();toast('Salle vidée, retour à l\'heure réelle');},
+  bilan:()=>{UI.panneau=UI.panneau==='bilan'?'normal':'bilan';UI.prop=null;UI.manuel=null;UI.selVisite=null;},
+  'effacer-histo':async()=>{if(UI.confirmHisto&&Date.now()-UI.confirmHisto<8000){UI.confirmHisto=0;await store.viderRepas();toast('Historique effacé');return;}UI.confirmHisto=Date.now();},
+  sections:async()=>{const entrer=UI.panneau!=='sections';UI.panneau=entrer?'sections':'normal';UI.prop=null;UI.manuel=null;UI.selVisite=null;if(!entrer)await enregistrerConfig();if(entrer&&!infoServeur(UI.pinceau))UI.pinceau=S.config.serveurs[0].id;},
   pinceau:el=>{UI.pinceau=el.dataset.s;},
   'ajout-serveur':()=>{const id=COULEURS.find(c=>!infoServeur(c));if(!id)return;S.config.serveurs.push({id,nom:'Serveur '+(S.config.serveurs.length+1),actif:true});UI.pinceau=id;sauverConfigBientot();},
   'retrait-serveur':()=>{const d=S.config.serveurs[S.config.serveurs.length-1];if(S.config.serveurs.length<2)return;
@@ -477,35 +611,19 @@ const ACTIONS={
     const p=S.config.serveurs[0].id;for(let n=1;n<=NB;n++)if(S.config.affectation[n]===d.id)S.config.affectation[n]=p;
     S.config.serveurs.pop();if(UI.pinceau===d.id)UI.pinceau=p;sauverConfigBientot();},
   origine:()=>{['s1','s2','s3'].forEach((id,i)=>{if(!infoServeur(id))S.config.serveurs.splice(i,0,{id,nom:'Serveur '+(i+1),actif:true});});S.config.affectation=sectionsOrigine();sauverConfigBientot();},
-  'zoom-moins':()=>changerZoom(-1),'zoom-plus':()=>changerZoom(1),'zoom-ajuster':()=>{UI.zoom=1;sauverUI();},
+  'zoom-moins':()=>changerZoom(-1),'zoom-plus':()=>changerZoom(1),'zoom-ajuster':()=>{UI.zoom=1;sauverUI();appliquerZoom();},
   pivot:()=>{UI.pivot=!UI.pivot;sauverUI();}
 };
-const ZOOMS=[1,1.5,2,2.5,3,4];
-// Zoom qui garde sous le curseur (ou au centre du cadre) le même point du plan.
+// Zoom par paliers réguliers, qui garde sous le curseur (ou au centre du cadre) le même point du plan.
 function changerZoom(d,px,py){
   const r=cadre.getBoundingClientRect();
   const ax=(px??r.left+cadre.clientWidth/2)-r.left,ay=(py??r.top+cadre.clientHeight/2)-r.top;
   const fx=(cadre.scrollLeft+ax)/cadre.scrollWidth,fy=(cadre.scrollTop+ay)/cadre.scrollHeight;
   const i=ZOOMS.indexOf(UI.zoom);const z=ZOOMS[Math.min(ZOOMS.length-1,Math.max(0,(i<0?0:i)+d))];
   if(z===UI.zoom)return;
-  UI.zoom=z;sauverUI();rendre();
+  UI.zoom=z;sauverUI();appliquerZoom();
   cadre.scrollLeft=fx*cadre.scrollWidth-ax;cadre.scrollTop=fy*cadre.scrollHeight-ay;
 }
-
-document.addEventListener('click',async e=>{
-  const t=e.target.closest('#plan .tb');
-  if(t){toucherTable(t.dataset.n?+t.dataset.n:+(S.visites[t.dataset.v]?.tables[0]));return;}
-  const b=e.target.closest('[data-action]');if(!b||b.disabled)return;
-  const f=ACTIONS[b.dataset.action];if(!f)return;
-  const r=f(b);rendre();if(r&&r.then){await r;rendre();}
-});
-document.addEventListener('keydown',e=>{const t=e.target.closest&&e.target.closest('#plan .tb');if(t&&(e.key==='Enter'||e.key===' ')){e.preventDefault();t.dispatchEvent(new MouseEvent('click',{bubbles:true}));}});
-document.addEventListener('input',e=>{
-  const el=e.target;
-  if(el.id==='nom'){UI.nom=el.value;return;}
-  if(el.dataset.serveur){const s=infoServeur(el.dataset.serveur);if(s){s.nom=el.value.slice(0,40);sauverConfigBientot();}}
-});
-document.addEventListener('change',e=>{const el=e.target;if(el.dataset.actif){const s=infoServeur(el.dataset.actif);if(s){s.actif=el.checked;sauverConfigBientot();rendre();}}});
 
 // ---------- Affichage ----------
 const svg=$('#plan'),cadre=$('#cadre'),large=matchMedia('(min-width:1000px)');
@@ -518,17 +636,18 @@ const pos=(cx,cy,d)=>UI.pivot?[cx+d,cy]:[cx,cy+d];
 const txt=(x,y,cls,s)=>`<text x="${x}" y="${y}" class="${cls}"${UI.pivot?` transform="rotate(-90 ${x} ${y})"`:''}>${s}</text>`;
 
 function rendrePlan(){
-  const occ=UI.edition?{}:occupation();
+  const edition=UI.panneau==='sections';const moi=edition?null:vueServeur();
+  const occ=edition?{}:occupation();
   let h=`<g${UI.pivot?` transform="matrix(0,1,-1,0,${H},0)"`:''}>`;
   h+=`<image href="fond-salle.png" x="0" y="0" width="${W}" height="${H}" class="fond" preserveAspectRatio="none"/>`;
   REPERES.forEach(([l,x,y])=>h+=txt(x,y,'repere',esc(l)));
   for(let n=1;n<=NB;n++){
-    if(occ[n])continue;const t=TABLES[n];const s=serveurDe(n);const ferme=!UI.edition&&!actif(s);
-    h+=`<g class="tb ${s}${ferme?' ferme':''}" data-n="${n}" role="button" tabindex="0" aria-label="Table ${n}, ${ferme?'section fermée':'libre'}, ${esc(nomServeur(s))}">${rc(rect(t),'f',4)}${txt(t.x,t.y,'num',n)}</g>`;
+    if(occ[n])continue;const t=TABLES[n];const s=serveurDe(n);const ferme=!edition&&!actif(s);const autre=moi&&s!==moi;
+    h+=`<g class="tb ${s}${ferme?' ferme':''}${autre?' autre':''}" data-n="${n}" role="button" tabindex="0" aria-label="Table ${n}, ${ferme?'section fermée':'libre'}, ${esc(nomServeur(s))}">${rc(rect(t),'f',4)}${txt(t.x,t.y,'num',n)}</g>`;
   }
-  if(!UI.edition)for(const [id,v] of Object.entries(S.visites)){
-    const r=reste(v);const long=enRetard(v);
-    h+=`<g class="tb occ ${v.serveur}${UI.selVisite===id?' active':''}" data-v="${id}" role="button" tabindex="0" aria-label="${esc(libTables(v.tables))}, ${v.pers} personnes, libre dans environ ${r} minutes">`;
+  if(!edition)for(const [id,v] of Object.entries(S.visites)){
+    const r=reste(v);const long=enRetard(v);const autre=moi&&v.serveur!==moi;
+    h+=`<g class="tb occ ${v.serveur}${UI.selVisite===id?' active':''}${autre?' autre':''}" data-v="${id}" role="button" tabindex="0" aria-label="${esc(libTables(v.tables))}, ${v.pers} personnes, libre dans environ ${r} minutes">`;
     grappes(v.tables).forEach((g,gi)=>{
       const u=union(g);
       if(long||v.etape==='addition')h+=rc(union(g,6),'anneau '+(long?'long':'addition'),9);
@@ -537,25 +656,41 @@ function rendrePlan(){
     });
     h+='</g>';
   }
-  if(UI.prop&&UI.prop.liste.length)grappes(UI.prop.liste[UI.prop.idx].tables).forEach(g=>h+=rc(union(g,8),'sel',9));
-  if(UI.manuel)UI.manuel.forEach(n=>h+=rc(union([n],8),'sel',9));
+  if(!edition)for(const c of Object.values(PRETS))grappes(c.tables).forEach(g=>h+=rc(union(g,6),'pret',8));
+  if(UI.prop&&UI.prop.liste.length)grappes(UI.prop.liste[UI.prop.idx].tables).forEach(g=>h+=rc(union(g,9),'sel',10));
+  if(UI.manuel)UI.manuel.forEach(n=>h+=rc(union([n],9),'sel',10));
   h+='</g>';
   svg.setAttribute('viewBox',UI.pivot?`0 0 ${H} ${W}`:`0 0 ${W} ${H}`);
   svg.innerHTML=h;
-  cadre.style.setProperty('--z',UI.zoom);
-  cadre.classList.toggle('ajuste',UI.zoom===1);
   $('#b-pivot').setAttribute('aria-pressed',UI.pivot);
+  appliquerZoom();
+}
+// Taille du plan = taille « Ajuster » (tout le plan visible) × palier de zoom.
+function appliquerZoom(){
+  const vbW=UI.pivot?H:W,vbH=UI.pivot?W:H;const cw=cadre.clientWidth,ch=cadre.clientHeight;
+  if(cw){
+    let s=cw/vbW;if(large.matches&&ch>50)s=Math.min(s,ch/vbH);
+    const w=Math.floor(vbW*s*UI.zoom)+'px',h=Math.floor(vbH*s*UI.zoom)+'px';
+    if(svg.style.width!==w)svg.style.width=w;
+    if(svg.style.height!==h)svg.style.height=h;
+  }
+  $('#zoom-val').textContent=Math.round(UI.zoom*100)+' %';
   requestAnimationFrame(()=>cadre.classList.toggle('peut-glisser',cadre.scrollWidth>cadre.clientWidth+2||cadre.scrollHeight>cadre.clientHeight+2));
 }
 
+let cleVue='';
 function rendreEntete(){
-  const vs=Object.values(S.visites);const tables=vs.reduce((a,v)=>a+v.tables.length,0);const couv=vs.reduce((a,v)=>a+v.pers,0);
-  const att=Object.keys(S.attente).length;const proch=vs.length?Math.min(...vs.map(reste)):null;
+  const vs=Object.values(S.visites);const tables=somme(vs,v=>v.tables.length);const couv=somme(vs,v=>v.pers);
+  const att=attenteTriee().length;const np=Object.keys(PRETS).length;const proch=vs.length?Math.min(...vs.map(reste)):null;
   const sync={direct:['direct','Partagé en direct'],connexion:['','Connexion…'],lent:['lent','Connexion lente, données peut-être pas à jour'],local:['','Démo sur cet appareil'],erreur:['erreur','Partage indisponible']}[UI.sync];
   $('#chiffres').innerHTML=`<span class="chip">Tables <b>${tables}</b>/80</span><span class="chip">Couverts <b>${couv}</b></span><span class="chip">Attente <b>${att}</b></span>`+
+    (np?`<span class="chip alerte"><span class="point" aria-hidden="true"></span>Tables prêtes <b>${np}</b></span>`:'')+
     (proch!=null?`<span class="chip">Prochaine table libre <b>~${proch}′</b></span>`:'')+
-    `<span class="chip"><b>${hm(Date.now())}</b></span><span class="chip ${sync[0]}" title="${esc(sync[1])}"><i></i>${esc(sync[1])}</span>`;
-  const b=$('#b-sections');b.classList.toggle('on',UI.edition);b.setAttribute('aria-pressed',UI.edition);
+    `<span class="chip${UI.vitesse?' alerte':''}"><b>${hm(maintenant())}</b>${UI.vitesse?' · simulation ×'+UI.vitesse:''}</span><span class="chip ${sync[0]}" title="${esc(sync[1])}"><i></i>${esc(sync[1])}</span>`;
+  const sel=$('#vue');const cle=S.config.serveurs.map(s=>s.id+':'+s.nom).join('|');
+  if(cle!==cleVue){cleVue=cle;sel.innerHTML='<option value="">Vue accueil</option>'+S.config.serveurs.map(s=>`<option value="${s.id}">Vue ${esc(s.nom)}</option>`).join('');}
+  const v=vueServeur()||'';if(sel.value!==v)sel.value=v;
+  for(const [id,p] of [['#b-bilan','bilan'],['#b-sections','sections']]){const b=$(id);b.classList.toggle('on',UI.panneau===p);b.setAttribute('aria-pressed',UI.panneau===p);}
 }
 
 function carteArrivee(){
@@ -571,7 +706,7 @@ function carteProp(){
   const p=UI.prop;
   if(!p.liste.length){
     const pv=p.prev;
-    const msg=pv?(pv.min===0?'Des tables sont libres, mais à cheval sur des sections fermées.':`Prochaine possibilité : ${libTables(pv.tables)}, dans ~${pv.min} min.`):'Aucune rangée n\'est assez longue pour ce groupe.';
+    const msg=pv?(pv.min===0?'Les tables libres sont gardées pour la liste d\'attente.':`Prochaine possibilité : ${libTables(pv.tables)}, dans ~${pv.min} min.`):'Aucune rangée n\'est assez longue pour ce groupe.';
     return `<section class="carte prop"><div class="tete"><h2>Aucune table libre</h2><button class="lien" data-action="annuler-prop">Fermer</button></div>
     <p class="grand">${p.n} pers.${p.nom?' · '+esc(p.nom):''}</p><div class="note alerte">${msg}</div>
     <div class="rang">${p.attenteId?'':'<button class="prim" data-action="prop-attente">Mettre en attente</button>'}<button data-action="annuler-prop">Annuler</button></div></section>`;
@@ -604,10 +739,26 @@ function carteVisite(id){
   return `<section class="carte prop ${v.serveur}"><div class="tete"><h2>Table occupée</h2><button class="lien" data-action="fermer-sel">Fermer</button></div>
   <p class="grand">${libTables(v.tables)}</p>
   <div class="meta"><span class="pastille"><i></i>${esc(nomServeur(v.serveur))}</span><span>${v.pers} pers.${v.nom?' · '+esc(v.nom):''}</span><span>Arrivés à ${hm(v.arrivee)}, il y a ${minutesDepuis(v.arrivee)} min</span></div>
-  <div class="note${long?' alerte':''}">Libre vers <b>${hm(Date.now()+r*6e4)}</b>, dans ~${r} min.${long?` Repas plus long que la moyenne (${est} min).`:''}</div>
+  <div class="note${long?' alerte':''}">Libre vers <b>${hm(maintenant()+r*6e4)}</b>, dans ~${r} min.${long?` Repas plus long que la moyenne (${est} min).`:''}</div>
   <div class="etapes" role="group" aria-label="Étape du repas">${ETAPES.map(([k,l])=>`<button class="${v.etape===k?'on':''}" aria-pressed="${v.etape===k}" data-action="etape" data-e="${k}">${l}</button>`).join('')}</div>
   <div class="rang"><button class="prim" data-action="liberer">Libérer ${v.tables.length>1?'les tables':'la table'}</button></div>
   <div><button class="lien" data-action="annuler-visite">Annuler cette place (erreur de saisie)</button></div></section>`;
+}
+function carteDemarrer(){
+  return `<section class="carte"><div class="tete"><h2>Salle vide</h2></div>
+  <p class="aide">Lancez une simulation : des groupes arrivent de 7 h à 14 h, le temps passe 30 fois plus vite, et vous voyez la rotation, la liste d'attente et les prévisions travailler. Ou remplissez la salle d'un coup avec un service d'exemple.</p>
+  <div class="rang"><button class="prim" data-action="sim-service">Lancer une simulation</button><button data-action="exemple" ${UI.chargement?'disabled':''}>${UI.chargement?'Chargement…':'Service d\'exemple'}</button></div></section>`;
+}
+function carteSimulation(){
+  const v=UI.vitesse;
+  const bt=VITESSES.map(x=>`<button class="${v===x?'on':''}" aria-pressed="${v===x}" data-action="vitesse" data-v="${x}">${x?'×'+x:'Pause'}</button>`).join('');
+  return `<section class="carte"><div class="tete"><h2>Simulation</h2>${v?`<span class="etat-sim"><span class="point" aria-hidden="true"></span>${hm(maintenant())} · ×${v}</span>`:''}</div>
+  <p class="aide">Le temps passe plus vite : des groupes arrivent selon l'affluence d'un brunch, avancent dans leur repas et repartent. Tout se passe sur cet appareil.</p>
+  <div class="vitesses" role="group" aria-label="Vitesse de la simulation">${bt}</div>
+  <label class="bascule"><input type="checkbox" id="auto-placer" ${UI.autoPlacer?'checked':''}>L'accueil place tout seul les groupes en attente</label>
+  <p class="aide">Décochez pour placer vous-même les groupes signalés « table prête ».</p>
+  <div class="rang"><button data-action="sim-service">${Object.keys(S.visites).length?'Recommencer à 7 h (vide la salle)':'Service complet de 7 h à 14 h'}</button></div>
+  ${store.db?'':'<div><button class="lien" data-action="sim-reset">Arrêter et revenir à l\'heure réelle</button></div>'}</section>`;
 }
 function carteRotation(){
   const pa=prochainActuel();const ch=chargeParServeur();const tot=tablesParServeur();const m=S.config.mode;
@@ -617,28 +768,98 @@ function carteRotation(){
   <ul class="liste">${li}</ul></section>`;
 }
 function carteAttente(){
-  const a=Object.entries(S.attente).filter(([,x])=>x&&Number.isFinite(x.pers)&&x.pers>0&&Number.isFinite(x.ajout)).sort((x,y)=>x[1].ajout-y[1].ajout);
-  const li=a.map(([id,x])=>{const p=prevision(x.pers);const eta=p?(p.min===0?'Table libre maintenant':`Table prévue dans ~${p.min} min`):'Groupe trop grand pour une rangée';
-    return `<li><div class="q"><b>${esc(x.nom||'Sans nom')} · ${x.pers} pers.</b><small>Attend depuis ${minutesDepuis(x.ajout)} min · ${eta}</small></div><button class="prim" data-action="placer-attente" data-id="${esc(id)}">Placer</button><button class="lien" data-action="retirer-attente" data-id="${esc(id)}">Retirer</button></li>`;}).join('');
-  return `<section class="carte"><div class="tete"><h2>Liste d'attente</h2></div>${a.length?`<ul class="liste">${li}</ul>`:'<p class="vide">Personne en attente.</p>'}</section>`;
+  const a=attenteTriee();
+  const li=a.map(([id,x])=>{
+    const c=PRETS[id];const m=minutesDepuis(x.ajout);
+    if(c)return `<li class="pret"><span class="point" aria-hidden="true"></span><div class="q"><b>${esc(x.nom||'Sans nom')} · ${x.pers} pers.</b><small>Table prête : ${libTables(c.tables)} · ${esc(nomServeur(c.serveur))} · attend depuis ${m} min</small></div><button class="prim" data-action="placer-pret" data-id="${esc(id)}">Placer ici</button><button class="lien" data-action="retirer-attente" data-id="${esc(id)}">Retirer</button></li>`;
+    const p=prevision(x.pers);const eta=p?(p.min===0?'Bientôt une table':`Table prévue dans ~${p.min} min`):'Groupe trop grand pour une rangée';
+    return `<li><div class="q"><b>${esc(x.nom||'Sans nom')} · ${x.pers} pers.</b><small>Attend depuis ${m} min · ${eta}</small></div><button data-action="placer-attente" data-id="${esc(id)}">Choisir</button><button class="lien" data-action="retirer-attente" data-id="${esc(id)}">Retirer</button></li>`;
+  }).join('');
+  return `<section class="carte"><div class="tete"><h2>Liste d'attente</h2>${a.length?`<span class="etat-sim">${pluriel(a.length,'groupe')}</span>`:''}</div>${a.length?`<ul class="liste">${li}</ul><p class="aide">Dès qu'une table convient au prochain groupe, elle lui est gardée (pointillés jaunes sur le plan) et sa ligne s'allume.</p>`:'<p class="vide">Personne en attente.</p>'}</section>`;
 }
-function cartePrevisions(){
-  const vs=Object.entries(S.visites).map(([id,v])=>({id,v,r:reste(v)})).sort((a,b)=>a.r-b.r).slice(0,6);
-  const lib=Object.fromEntries(ETAPES);
-  const li=vs.map(({v,r})=>`<li class="${v.serveur}"><span class="pastille"><i></i></span><div class="q"><b>${libTables(v.tables)} · ${v.tables.length*2} places</b><small>${lib[v.etape]||'Assis'} · arrivés à ${hm(v.arrivee)}</small></div><span class="eta">~${r}′</span></li>`).join('');
-  const lignes=Object.keys(BASE).map(k=>`<tr><td>${CAT_LIB[k]}</td><td>${BASE[k]} min</td><td>${ST[k].n?`${ST[k].med} min <small>(${ST[k].n})</small>`:'—'}</td><td><b>${ST[k].est} min</b></td></tr>`).join('');
+function cartePrevisions(filtre){
+  const vs=Object.entries(S.visites).filter(([,v])=>!filtre||v.serveur===filtre).map(([id,v])=>({id,v,r:reste(v)})).sort((a,b)=>a.r-b.r).slice(0,6);
+  const li=vs.map(({v,r})=>`<li class="${v.serveur}"><span class="pastille"><i></i></span><div class="q"><b>${libTables(v.tables)} · ${v.tables.length*2} places</b><small>${LIB_ETAPE[v.etape]||'Assis'} · arrivés à ${hm(v.arrivee)}</small></div><span class="eta">~${r}′</span></li>`).join('');
+  const lignes=Object.keys(BASE).map(k=>`<tr><td>${CAT_LIB[k]}</td><td>${BASE[k]} min</td><td>${ST[k].n?`${ST[k].med} min <small>(${ST[k].tot})</small>`:'—'}</td><td><b>${ST[k].est} min</b></td></tr>`).join('');
   return `<section class="carte"><div class="tete"><h2>Prochaines tables libres</h2></div>${vs.length?`<ul class="liste">${li}</ul>`:'<p class="vide">Aucune table occupée.</p>'}
   <div class="tete"><h2>Durée d'un repas</h2></div>
   <div class="tableau"><table><thead><tr><th>Groupe</th><th>Départ</th><th>Observée</th><th>Utilisée</th></tr></thead><tbody>${lignes}</tbody></table></div>
   <p class="aide">Chaque table libérée ajoute sa durée réelle à l'historique (${S.repas.length} repas). Chaque étape du repas corrige ensuite l'estimation de la table en cours.</p></section>`;
 }
 function carteService(){
-  const k=Object.keys(S.visites).length;
-  if(!k)return `<section class="carte"><div class="tete"><h2>Salle vide</h2></div><p class="aide">Placez un premier groupe avec « Arrivée », ou chargez un service d'exemple pour voir le plan en action. Les groupes d'exemple ne comptent pas dans l'historique.</p>
-  <div class="rang"><button data-action="exemple" ${UI.chargement?'disabled':''}>${UI.chargement?'Chargement…':'Charger un service d\'exemple'}</button></div></section>`;
-  const conf=UI.confirmFin&&Date.now()-UI.confirmFin<8000;
+  const k=Object.keys(S.visites).length;const conf=UI.confirmFin&&Date.now()-UI.confirmFin<8000;
   return `<section class="carte"><div class="tete"><h2>Service</h2></div><p class="aide">La fin de service libère toutes les tables sans les compter dans l'historique.</p>
-  <div class="rang"><button class="danger" data-action="fin-service" ${UI.chargement?'disabled':''}>${UI.chargement?'Libération…':conf?`Confirmer : libérer ${k} groupe${k>1?'s':''}`:'Fin de service'}</button>${conf?'<button data-action="fin-garder">Garder</button>':''}</div></section>`;
+  <div class="rang"><button class="danger" data-action="fin-service" ${UI.chargement?'disabled':''}>${UI.chargement?'Libération…':conf?`Confirmer : libérer ${pluriel(k,'groupe')}`:'Fin de service'}</button>${conf?'<button data-action="fin-garder">Garder</button>':''}</div></section>`;
+}
+function carteMesTables(){
+  const me=vueServeur();const s=infoServeur(me);
+  const mes=Object.entries(S.visites).filter(([,v])=>v.serveur===me).sort((a,b)=>a[1].arrivee-b[1].arrivee);
+  const couv=somme(mes,([,v])=>v.pers);const pa=prochainActuel();
+  const jour=new Date(maintenant()).toDateString();
+  const servis=S.repas.filter(r=>r&&r.s===me&&Number.isFinite(r.f)&&new Date(r.f).toDateString()===jour).length;
+  const li=mes.map(([id,v])=>{const r=reste(v);const add=v.etape==='addition';const long=enRetard(v);
+    return `<li class="${add?'pret':''}">${add?'<span class="point" aria-hidden="true"></span>':''}<div class="q"><b>${libTables(v.tables)} · ${v.pers} pers.${v.nom?' · '+esc(v.nom):''}</b><small>${LIB_ETAPE[v.etape]||'Assis'} · depuis ${minutesDepuis(v.arrivee)} min · ${long?'plus long que prévu':'libre dans ~'+r+' min'}</small></div><button class="${add?'prim':''}" data-action="etape-suivante" data-v="${esc(id)}">${BOUTON_SUIVANT[v.etape]||'Commande prise'}</button></li>`;}).join('');
+  return `<section class="carte prop ${me}"><div class="tete"><h2>Mes tables</h2>${pa===me&&s.actif?'<em class="badge">Prochain client pour vous</em>':''}</div>
+  <p class="grand">${esc(s.nom)}</p>
+  <div class="meta"><span>${pluriel(mes.length,'groupe')} à table · ${couv} couverts</span><span>${servis} servi${servis>1?'s':''} aujourd'hui</span>${s.actif?'':'<span>Section fermée</span>'}</div>
+  ${mes.length?`<ul class="liste">${li}</ul>`:'<p class="vide">Aucune table occupée dans votre section.</p>'}
+  <p class="aide">Le bouton de chaque ligne passe le repas à l'étape suivante ; à l'addition, il libère la table. Les autres sections sont estompées sur le plan.</p></section>`;
+}
+// ---------- Bilan du service (journée de l'horloge affichée) ----------
+function calculerBilan(){
+  const t=maintenant();const jour=new Date(t).toDateString();
+  const rep=S.repas.filter(r=>r&&Number.isFinite(r.f)&&Number.isFinite(r.p)&&new Date(r.f).toDateString()===jour);
+  const cours=Object.values(S.visites).filter(v=>new Date(v.arrivee).toDateString()===jour);
+  const tous=[...rep.map(r=>({p:r.p,a:Number.isFinite(r.a)?r.a:r.f-(r.d||0)*6e4,s:r.s,tb:Array.isArray(r.tb)?r.tb:[],w:r.w||0})),...cours.map(v=>({p:v.pers,a:v.arrivee,s:v.serveur,tb:v.tables,w:v.attendu||0}))];
+  const att=tous.filter(x=>x.w>0);
+  const heures={};tous.forEach(x=>{const h=new Date(x.a).getHours();(heures[h]=heures[h]||{c:0,g:0});heures[h].c+=x.p;heures[h].g++;});
+  const hs=Object.keys(heures).map(Number);const hmin=Math.min(7,...hs),hmax=Math.max(13,...hs);
+  const parServeur={};tous.forEach(x=>{const k=x.s||'?';(parServeur[k]=parServeur[k]||{g:0,c:0});parServeur[k].g++;parServeur[k].c+=x.p;});
+  const parTable={};tous.forEach(x=>x.tb.forEach(n=>{parTable[n]=(parTable[n]||0)+1;}));
+  return{groupes:tous.length,enCours:cours.length,couverts:somme(tous,x=>x.p),termines:rep.length,
+    dureeMoy:rep.length?Math.round(somme(rep,r=>r.d||0)/rep.length):null,
+    attenteMoy:att.length?Math.round(somme(att,x=>x.w)/att.length):null,nbAttente:att.length,
+    heures,hmin,hmax,parServeur,top:Object.entries(parTable).sort((a,b)=>b[1]-a[1]||a[0]-b[0]).slice(0,5)};
+}
+function pasLisible(max){for(const p of [1,2,5,10,20,25,50,100,200])if(max/p<=4)return p;return 500;}
+function graphHeures(b){
+  const L=340,Ht=150,ml=30,mb=22,mt=10;const hs=[];for(let h=b.hmin;h<=b.hmax;h++)hs.push({h,c:b.heures[h]?.c||0,g:b.heures[h]?.g||0});
+  const max=Math.max(1,...hs.map(x=>x.c));const p=pasLisible(max);const haut=Math.ceil(max/p)*p;const zone=Ht-mb-mt;
+  const bande=(L-ml)/hs.length;const bw=Math.min(28,bande*.62);
+  let s=`<svg viewBox="0 0 ${L} ${Ht}" role="img" aria-label="Couverts par heure d'arrivée">`;
+  for(let v=0;v<=haut;v+=p){const y=mt+zone-(v/haut)*zone;s+=`<line class="${v?'grille':'axe'}" x1="${ml}" x2="${L}" y1="${y}" y2="${y}"/><text x="${ml-6}" y="${y}" text-anchor="end" dominant-baseline="central">${v}</text>`;}
+  hs.forEach((x,i)=>{
+    const cx=ml+i*bande+bande/2;const hgt=(x.c/haut)*zone;const y=mt+zone-hgt;const x0=cx-bw/2;const r=Math.min(4,hgt/2,bw/2);
+    if(x.c)s+=`<path class="bar" data-i="${i}" d="M${x0},${mt+zone} V${y+r} Q${x0},${y} ${x0+r},${y} H${x0+bw-r} Q${x0+bw},${y} ${x0+bw},${y+r} V${mt+zone} Z"/>`;
+    s+=`<text x="${cx}" y="${Ht-6}" text-anchor="middle">${x.h} h</text>`;
+    s+=`<rect class="cible" data-i="${i}" data-x="${cx}" data-y="${y}" data-info="${x.h} h – ${x.h+1} h : ${pluriel(x.c,'couvert')}, ${pluriel(x.g,'groupe')}" x="${ml+i*bande}" y="${mt}" width="${bande}" height="${zone}" tabindex="0" aria-label="${x.h} heures : ${x.c} couverts"/>`;
+  });
+  s+='</svg>';
+  const table=`<table class="sr"><caption>Couverts par heure d'arrivée</caption><tr><th>Heure</th><th>Couverts</th><th>Groupes</th></tr>${hs.map(x=>`<tr><td>${x.h} h</td><td>${x.c}</td><td>${x.g}</td></tr>`).join('')}</table>`;
+  return `<div class="graph">${s}<div class="bulle" hidden></div>${table}</div>`;
+}
+function carteBilan(){
+  const b=calculerBilan();const date=new Date(maintenant()).toLocaleDateString('fr-CA',{weekday:'long',day:'numeric',month:'long'});
+  const tete=`<div class="tete"><h2>Bilan du service</h2><button class="lien" data-action="bilan">Fermer</button></div><p class="grand">${esc(date.charAt(0).toUpperCase()+date.slice(1))}</p>`;
+  if(!b.groupes)return `<section class="carte">${tete}<p class="vide">Aucun groupe aujourd'hui. Lancez une simulation de service pour remplir le bilan.</p><div class="rang"><button class="prim" data-action="sim-service">Lancer une simulation</button></div></section>`;
+  const moy=(b.couverts/b.groupes).toFixed(1).replace('.',',');
+  const tuiles=`<div class="tuiles">
+    <div class="tuile"><small>Groupes</small><b>${b.groupes}</b><small>dont ${b.enCours} à table</small></div>
+    <div class="tuile"><small>Couverts</small><b>${b.couverts}</b><small>${moy} par groupe</small></div>
+    <div class="tuile"><small>Durée moyenne</small><b>${b.dureeMoy!=null?b.dureeMoy+' min':'—'}</b><small>${pluriel(b.termines,'repas','repas')} terminé${b.termines>1?'s':''}</small></div>
+    <div class="tuile"><small>Attente moyenne</small><b>${b.attenteMoy!=null?b.attenteMoy+' min':'—'}</b><small>${pluriel(b.nbAttente,'groupe')} ${b.nbAttente>1?'ont':'a'} attendu</small></div></div>`;
+  const tot=Math.max(1,b.couverts);
+  const parts=S.config.serveurs.map(s=>{const x=b.parServeur[s.id]||{g:0,c:0};const pct=Math.round(x.c*100/tot);
+    return `<li class="${s.id}"><div class="q"><b>${esc(s.nom)}</b><small>${pluriel(x.g,'groupe')} · ${pluriel(x.c,'couvert')}</small><div class="piste"><div class="rempli" style="width:${pct}%"></div></div></div><span class="eta">${pct} %</span></li>`;}).join('');
+  const lignes=Object.keys(BASE).map(k=>`<tr><td>${CAT_LIB[k]}</td><td>${ST[k].tot}</td><td>${ST[k].med!=null?ST[k].med+' min':'—'}</td><td><b>${ST[k].est} min</b></td></tr>`).join('');
+  const top=b.top.map(([n,c])=>`<li>Table ${n} · ${pluriel(c,'groupe')}</li>`).join('');
+  const conf=UI.confirmHisto&&Date.now()-UI.confirmHisto<8000;
+  return `<section class="carte">${tete}${tuiles}</section>
+  <section class="carte"><div class="tete"><h2>Couverts par heure d'arrivée</h2></div>${graphHeures(b)}</section>
+  <section class="carte"><div class="tete"><h2>Par serveur</h2></div><p class="aide">Part des couverts de la journée : une rotation équitable donne des parts proches.</p><ul class="liste parts">${parts}</ul></section>
+  <section class="carte"><div class="tete"><h2>Durée par taille de groupe</h2></div><div class="tableau"><table><thead><tr><th>Groupe</th><th>Repas</th><th>Médiane</th><th>Estimation</th></tr></thead><tbody>${lignes}</tbody></table></div><p class="aide">Sur tout l'historique : c'est ce que l'estimation apprend.</p></section>
+  <section class="carte"><div class="tete"><h2>Tables les plus demandées</h2></div>${top?`<ol class="top">${top}</ol>`:'<p class="vide">Pas encore de données.</p>'}
+  <div class="rang"><button class="danger" data-action="effacer-histo">${conf?'Confirmer : effacer l\'historique':'Effacer l\'historique'}</button></div><p class="aide">Effacer l'historique remet aussi l'apprentissage des durées à zéro.</p></section>`;
 }
 function carteSections(){
   const tot=tablesParServeur();const n=S.config.serveurs.length;
@@ -652,16 +873,19 @@ function carteSections(){
 }
 function rendrePanneau(){
   const act=document.activeElement;const fid=act&&act.id;const sel=fid&&act.selectionStart!=null?[act.selectionStart,act.selectionEnd]:null;
-  let haut='',bas='';
-  const lecture=UI.lecture?'<div class="note alerte">Lecture seule : vous pouvez consulter le plan, pas le modifier.</div>':'';
-  if(UI.edition){haut=carteSections();}
-  else{
-    haut=lecture+carteArrivee();
+  let haut='',bas='';const vides=!Object.keys(S.visites).length;
+  if(UI.panneau==='sections')haut=carteSections();
+  else if(UI.panneau==='bilan')haut=carteBilan();
+  else if(vueServeur()){
+    haut=(UI.selVisite&&S.visites[UI.selVisite]?carteVisite(UI.selVisite):'')+carteMesTables();
+    bas=cartePrevisions(vueServeur());
+  }else{
+    haut=carteArrivee();
     if(UI.selVisite&&S.visites[UI.selVisite])haut+=carteVisite(UI.selVisite);
     else if(UI.manuel)haut+=carteManuel();
     else if(UI.prop)haut+=carteProp();
-    if(!Object.keys(S.visites).length)haut+=carteService();
-    bas=carteRotation()+carteAttente()+cartePrevisions()+(Object.keys(S.visites).length?carteService():'');
+    if(vides&&!UI.vitesse)haut+=carteDemarrer();
+    bas=carteAttente()+carteSimulation()+carteRotation()+cartePrevisions()+(vides?'':carteService());
   }
   $('#haut').innerHTML=haut;$('#bas').innerHTML=bas;
   if(fid){const el=document.getElementById(fid);if(el&&el!==act){el.focus({preventScroll:true});if(sel&&el.setSelectionRange)try{el.setSelectionRange(sel[0],sel[1]);}catch(e){}}}
@@ -671,12 +895,61 @@ function nettoyerUI(){
   const occ=occupation();
   if(UI.manuel){for(const n of [...UI.manuel])if(occ[n])UI.manuel.delete(n);if(!UI.manuel.size)UI.manuel=null;}
   if(UI.prop&&UI.prop.attenteId&&!S.attente[UI.prop.attenteId])UI.prop.attenteId=null;
-  if(UI.prop&&UI.prop.liste.length){const c=UI.prop.liste[UI.prop.idx];if(c.tables.some(n=>occ[n]||!actif(serveurDe(n))))faireProposition(UI.prop.n,UI.prop.nom,UI.prop.attenteId);}
+  if(UI.prop&&UI.prop.liste.length){const c=UI.prop.liste[UI.prop.idx];if(!c||c.tables.some(n=>occ[n]||!actif(serveurDe(n))))faireProposition(UI.prop.n,UI.prop.nom,UI.prop.attenteId);}
 }
-function rendre(){ST=stats();nettoyerUI();rendreEntete();rendrePlan();rendrePanneau();}
+// Signale les groupes dont la table vient d'être prête (sauf quand la simulation les place toute seule).
+function notifierPrets(){
+  const ids=Object.keys(PRETS);
+  if(UI.pretsConnus&&!(UI.vitesse>0&&UI.autoPlacer)){const nouveaux=ids.filter(id=>!UI.pretsConnus.has(id));const a=nouveaux.length&&S.attente[nouveaux[0]];
+    if(a)toast(`${a.nom||'Un groupe'} (${a.pers} pers.) : table prête, ${libTables(PRETS[nouveaux[0]].tables)}`+(nouveaux.length>1?`, et ${nouveaux.length-1} autre${nouveaux.length>2?'s':''}`:''));}
+  UI.pretsConnus=new Set(ids);
+}
+// Pendant qu'un doigt ou la souris est appuyé, on retarde l'affichage pour ne pas perdre le clic.
+let enfonce=false,differe=false;
+function rendre(){
+  if(enfonce){differe=true;return;}
+  ST=stats();PRETS=calculerPrets();nettoyerUI();notifierPrets();rendreEntete();rendrePlan();rendrePanneau();
+}
 let toastT;function toast(m){const el=$('#toast');el.textContent=m;el.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>el.hidden=true,3500);}
 
-// ---------- Déplacer le plan en maintenant le clic (souris, stylet) ; au doigt, le défilement natif s'en charge ----------
+// ---------- Événements ----------
+document.addEventListener('pointerdown',()=>{enfonce=true;},true);
+const relacher=()=>{enfonce=false;if(differe){differe=false;setTimeout(rendre,0);}};
+document.addEventListener('pointerup',relacher,true);
+document.addEventListener('pointercancel',relacher,true);
+document.addEventListener('click',async e=>{
+  const t=e.target.closest('#plan .tb');
+  if(t){toucherTable(t.dataset.n?+t.dataset.n:+(S.visites[t.dataset.v]?.tables[0]));return;}
+  const b=e.target.closest('[data-action]');if(!b||b.disabled)return;
+  const f=ACTIONS[b.dataset.action];if(!f)return;
+  const r=f(b);rendre();if(r&&r.then){await r;rendre();}
+});
+document.addEventListener('keydown',e=>{const t=e.target.closest&&e.target.closest('#plan .tb');if(t&&(e.key==='Enter'||e.key===' ')){e.preventDefault();t.dispatchEvent(new MouseEvent('click',{bubbles:true}));}});
+document.addEventListener('input',e=>{
+  const el=e.target;
+  if(el.id==='nom'){UI.nom=el.value;return;}
+  if(el.dataset.serveur){const s=infoServeur(el.dataset.serveur);if(s){s.nom=el.value.slice(0,40);sauverConfigBientot();}}
+});
+document.addEventListener('change',e=>{
+  const el=e.target;
+  if(el.id==='vue'){UI.vueServeur=el.value||null;UI.panneau='normal';UI.prop=null;UI.manuel=null;UI.selVisite=null;sauverUI();rendre();return;}
+  if(el.id==='auto-placer'){UI.autoPlacer=el.checked;sauverUI();return;}
+  if(el.dataset.actif){const s=infoServeur(el.dataset.actif);if(s){s.actif=el.checked;sauverConfigBientot();rendre();}}
+});
+// Bulle d'information du graphique du bilan.
+function bulle(c,montrer){
+  const g=c.closest('.graph');if(!g)return;const b=g.querySelector('.bulle');
+  g.querySelectorAll('.bar.survol').forEach(x=>x.classList.remove('survol'));
+  if(!montrer){b.hidden=true;return;}
+  const bar=g.querySelector(`.bar[data-i="${c.dataset.i}"]`);if(bar)bar.classList.add('survol');
+  const k=g.clientWidth/340;b.textContent=c.dataset.info;b.style.left=(parseFloat(c.dataset.x)*k)+'px';b.style.top=(parseFloat(c.dataset.y)*k-8)+'px';b.hidden=false;
+}
+document.addEventListener('pointerover',e=>{const c=e.target.closest&&e.target.closest('.graph .cible');if(c)bulle(c,true);});
+document.addEventListener('pointerout',e=>{const c=e.target.closest&&e.target.closest('.graph .cible');if(c)bulle(c,false);});
+document.addEventListener('focusin',e=>{const c=e.target.closest&&e.target.closest('.graph .cible');if(c)bulle(c,true);});
+document.addEventListener('focusout',e=>{const c=e.target.closest&&e.target.closest('.graph .cible');if(c)bulle(c,false);});
+
+// Déplacer le plan en maintenant le clic (souris, stylet) ; au doigt, le défilement natif s'en charge.
 let glisse=null,bloquerClic=false,dernierZoomMolette=0;
 cadre.addEventListener('pointerdown',e=>{
   if(e.pointerType==='touch'||e.button!==0)return;
@@ -707,12 +980,13 @@ cadre.addEventListener('wheel',e=>{
   const now=Date.now();if(now-dernierZoomMolette<120)return;dernierZoomMolette=now;
   changerZoom(e.deltaY<0?1:-1,e.clientX,e.clientY);
 },{passive:false});
+if(window.ResizeObserver)new ResizeObserver(()=>appliquerZoom()).observe(cadre);
 
 // ---------- Démarrage ----------
 chargerLocal();
-if(!large.matches&&UI.zoom===1)UI.zoom=2.5;
+if(!large.matches&&UI.zoom===1)UI.zoom=2;
 ST=stats();rendre();
-setInterval(rendre,20000);
+setInterval(tick,1000);
 large.addEventListener('change',rendre);
 
 (async()=>{
@@ -722,7 +996,7 @@ large.addEventListener('change',rendre);
   if(user){try{ecriture=await user.can('data.write');}catch(e){}}
   // Sans base, ou sans droit d'écriture sur le plan partagé : démo sur cet appareil.
   if(!db||ecriture===false){UI.sync='local';rendre();return;}
-  store.db=db;
+  store.db=db;decalage=0;UI.vitesse=0;
   S.config=clone(CONFIG_DEFAUT);S.prochain=null;S.visites={};S.attente={};S.repas=[];rendre();
   const t=setTimeout(()=>{if(UI.sync==='connexion'){UI.sync='lent';rendre();}},10000);
   const recu=s=>{if(!s.metadata.fromCache&&UI.sync!=='erreur'){clearTimeout(t);UI.sync='direct';}};
