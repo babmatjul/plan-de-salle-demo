@@ -32,6 +32,7 @@
   --s1:#1baf7a; --s2:#eb6834; --s3:#2a78d6; --s4:#e87ba4; --s5:#6250d6;
   --on-s1:#0b1a12; --on-s2:#1f0d05; --on-s3:#ffffff; --on-s4:#2a0d18; --on-s5:#ffffff;
   --fond-filtre:none; --fond-opacite:.55;
+  --qr-fond:#ffffff; /* un code QR se lit sur fond blanc, quel que soit le thème */
   --f-texte:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
   --f-titre:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
   --f-marque:"Bricolage Grotesque","Barlow",system-ui,sans-serif;
@@ -92,7 +93,31 @@ button[disabled]{opacity:.55;cursor:default}
 .barre select{font:500 15px var(--f-texte);border-radius:10px;padding:8px 10px;min-height:40px;max-width:190px}
 .barre select option{color:var(--fg);background:var(--surface)}
 @media (prefers-reduced-motion:reduce){button{transition:none}}
-.corps{display:grid;gap:12px;grid-template-columns:minmax(0,1fr);grid-template-areas:"haut" "plan" "bas"}
+.corps{display:grid;gap:12px;grid-template-columns:minmax(0,1fr);grid-template-areas:"haut" "plan" "attente" "bas"}
+/* Liste d'attente : colonne de gauche sur grand écran, carte sous le plan ailleurs. */
+.attente{grid-area:attente;display:flex;flex-direction:column;gap:12px;min-width:0}
+.attente:empty{display:none}
+.qr-mini{display:flex;flex-direction:column;align-items:center;gap:4px;width:100%;padding:12px;border-radius:14px;background:var(--surface-2);border:1px solid var(--line);font-size:14px}
+.qr-mini small{color:var(--muted);font-weight:400}
+.qr{display:block;background:var(--qr-fond);border-radius:10px;padding:6px;width:148px;height:148px}
+.qr svg{display:block;width:100%;height:100%}
+.vide-qr{display:flex;align-items:center;justify-content:center;color:#3d4a41;font-size:13px;text-align:center}
+.liste-attente li{flex-direction:column;align-items:stretch;gap:6px}
+.rang-mini{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.puces{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.puce{font-size:12px;font-weight:500;padding:2px 8px;border-radius:999px;background:var(--surface-2);color:var(--fg)}
+.puce.ok{background:color-mix(in srgb,var(--ok) 25%,var(--surface))}
+.deplier{display:flex;flex-direction:column;align-items:center;gap:2px;width:100%;padding:12px 4px;font-size:12px}
+.deplier b{font:700 26px/1 var(--f-marque)}
+.qr-icone{width:100%;padding:6px;background:var(--qr-fond);border-radius:12px;min-height:0}
+.qr-icone svg{display:block;width:100%;height:auto}
+.qr-plein{position:fixed;inset:0;z-index:40;background:var(--bande);color:var(--bande-texte);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;text-align:center;cursor:pointer;
+  padding:max(24px,env(safe-area-inset-top,0px)) max(24px,env(safe-area-inset-right,0px)) max(24px,env(safe-area-inset-bottom,0px)) max(24px,env(safe-area-inset-left,0px))}
+.qr-plein h2{font:700 clamp(28px,5vw,48px)/1.1 var(--f-marque);margin:0}
+.qr-plein .qr{width:min(60vmin,520px);height:min(60vmin,520px);padding:clamp(10px,2vmin,20px);border-radius:24px}
+.qr-texte{max-width:34em;font-size:clamp(16px,2.4vmin,22px);margin:0}
+.qr-url{font-size:14px;color:var(--bande-doux);margin:0;word-break:break-all}
+.qr-plein .qr-fermer{background:transparent;color:var(--bande-texte);border-color:var(--bande-ligne)}
 .cote{display:contents}
 #haut{grid-area:haut;display:flex;flex-direction:column;gap:12px;min-width:0}
 #bas{grid-area:bas;display:flex;flex-direction:column;gap:12px;min-width:0}
@@ -224,7 +249,10 @@ input[type=text],input[type=password],input[type=url]{font:400 15px var(--f-text
 @media (prefers-reduced-motion:reduce){#plan .sel,.point{animation:none}#plan .tb{transition:none}}
 @media (min-width:1000px){
   .app{height:100%;min-height:0}
-  .corps{flex:1;min-height:0;grid-template-columns:minmax(0,1fr) 384px;grid-template-areas:"plan cote"}
+  .corps{flex:1;min-height:0;grid-template-columns:270px minmax(0,1fr) 360px;grid-template-areas:"attente plan cote"}
+  .corps.attente-repliee{grid-template-columns:78px minmax(0,1fr) 360px}
+  .corps.sans-attente{grid-template-columns:minmax(0,1fr) 384px;grid-template-areas:"plan cote"}
+  .attente{overflow:auto;min-height:0}
   .cote{display:flex;flex-direction:column;gap:12px;grid-area:cote;overflow:auto;min-height:0;padding-right:2px}
   .zone-plan{min-height:0}
   .cadre{flex:1;min-height:0;max-height:none;touch-action:none} /* tablette en paysage : glisser et pincer gérés par la page */
@@ -251,7 +279,7 @@ input[type=text],input[type=password],input[type=url]{font:400 15px var(--f-text
 @media (pointer:coarse){.astuce{display:none}}
 /* Tablette en portrait : le plan d'abord, puis les cartes sur deux colonnes (une carte seule sur sa ligne prend toute la largeur). */
 @media (min-width:700px) and (max-width:999px){
-  .corps{grid-template-areas:"plan" "haut" "bas"}
+  .corps{grid-template-areas:"plan" "attente" "haut" "bas"}
   #haut,#bas{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}
   #haut>.carte:last-child:nth-child(odd),#bas>.carte:last-child:nth-child(odd){grid-column:1/-1}
   .cadre{max-height:58vh}
@@ -278,6 +306,7 @@ input[type=text],input[type=password],input[type=url]{font:400 15px var(--f-text
     </div>
   </header>
   <main class="corps">
+    <aside class="attente" id="attente" aria-label="Liste d'attente"></aside>
     <section class="zone-plan" aria-label="Plan de la salle">
       <div class="outils">
         <button data-action="zoom-moins" aria-label="Dézoomer">−</button>
@@ -301,6 +330,15 @@ input[type=text],input[type=password],input[type=url]{font:400 15px var(--f-text
   </main>
 </div>
 <div class="toast" id="toast" role="status" hidden></div>
+<!-- Code QR en plein écran, à montrer aux clients ; on le ferme en touchant n'importe où. -->
+<div class="qr-plein" id="qr-plein" data-action="qr-fermer" role="dialog" aria-modal="true" aria-labelledby="qr-titre" hidden>
+  <h2 id="qr-titre">Liste d'attente</h2>
+  <div class="qr" id="qr-grand"></div>
+  <p class="qr-texte">Scannez ce code avec l'appareil photo de votre téléphone, puis inscrivez-vous.<br>Nous vous préviendrons par texto ou par courriel quand votre table sera bientôt prête.</p>
+  <p class="qr-url" id="qr-url"></p>
+  <button class="qr-fermer" data-action="qr-fermer">Fermer</button>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 
 <script>
 // ---------- Le plan : 80 tables de 24 × 30 po (2 places), relevées dans le plan d'aménagement A-300 ----------
@@ -350,7 +388,7 @@ const S={config:clone(CONFIG_DEFAUT),prochain:null,visites:{},attente:{},repas:[
 let decalage=0;                                  // avance de l'horloge simulée sur l'heure réelle (ms)
 const maintenant=()=>Date.now()+decalage;
 const UI={n:2,nom:'',prop:null,manuel:null,manuelAttente:null,selVisite:null,panneau:'normal',vueServeur:null,pinceau:'s1',zoom:1,pivot:false,
-  sync:'connexion',confirmFin:0,confirmHisto:0,chargement:false,configSale:false,vitesse:0,autoPlacer:true,simT:null,pretsConnus:null,selSale:null,pivotAuto:true,ecran:false};
+  sync:'connexion',confirmFin:0,confirmHisto:0,chargement:false,configSale:false,vitesse:0,autoPlacer:true,simT:null,pretsConnus:null,selSale:null,pivotAuto:true,ecran:false,attenteRepliee:false,avisAuto:true,contactVisible:null,inscriptionsFinies:new Set()};
 let ST=null,PRETS={};
 // Connexion à Veloce, par le connecteur (dossier veloce/ du projet). Adresse et clé gardées sur cet appareil.
 const CLE_VELOCE='plan-salle-veloce-v1',PLACES=160;
@@ -475,10 +513,10 @@ function occSansReserves(saufId){const occ=occupees();for(const [id,c] of Object
 const CLE='plan-salle-v1',CLE_UI='plan-salle-ui-v1';
 function chargerLocal(){
   try{const d=JSON.parse(localStorage.getItem(CLE)||'null');if(d){S.config=normaliserConfig(d.config);S.prochain=d.prochain||null;S.visites=Object.fromEntries(Object.entries(d.visites||{}).filter(([,v])=>visiteValide(v)));S.attente=d.attente&&typeof d.attente==='object'?d.attente:{};S.repas=Array.isArray(d.repas)?d.repas:[];S.sale=d.sale&&typeof d.sale==='object'?d.sale:{};decalage=Number.isFinite(d.decalage)?d.decalage:0;}}catch(e){}
-  try{const u=JSON.parse(localStorage.getItem(CLE_UI)||'null');if(u){UI.pivot=!!u.pivot;if(ZOOMS.includes(u.zoom))UI.zoom=u.zoom;UI.vueServeur=u.vueServeur||null;UI.autoPlacer=u.autoPlacer!==false;UI.pivotAuto=u.pivotAuto!==false;UI.ecran=!!u.ecran;}}catch(e){}
+  try{const u=JSON.parse(localStorage.getItem(CLE_UI)||'null');if(u){UI.pivot=!!u.pivot;if(ZOOMS.includes(u.zoom))UI.zoom=u.zoom;UI.vueServeur=u.vueServeur||null;UI.autoPlacer=u.autoPlacer!==false;UI.pivotAuto=u.pivotAuto!==false;UI.ecran=!!u.ecran;UI.attenteRepliee=!!u.attenteRepliee;UI.avisAuto=u.avisAuto!==false;}}catch(e){}
 }
 function sauverLocal(){if(store.db)return;try{localStorage.setItem(CLE,JSON.stringify({config:S.config,prochain:S.prochain,visites:S.visites,attente:S.attente,repas:S.repas,sale:S.sale,decalage}));}catch(e){}}
-function sauverUI(){try{localStorage.setItem(CLE_UI,JSON.stringify({pivot:UI.pivot,zoom:UI.zoom,vueServeur:UI.vueServeur,autoPlacer:UI.autoPlacer,pivotAuto:UI.pivotAuto,ecran:UI.ecran}));}catch(e){}}
+function sauverUI(){try{localStorage.setItem(CLE_UI,JSON.stringify({pivot:UI.pivot,zoom:UI.zoom,vueServeur:UI.vueServeur,autoPlacer:UI.autoPlacer,pivotAuto:UI.pivotAuto,ecran:UI.ecran,attenteRepliee:UI.attenteRepliee,avisAuto:UI.avisAuto}));}catch(e){}}
 const files={};
 function ecrire(cle,fn){const p=(files[cle]||Promise.resolve()).then(()=>essayer(fn));files[cle]=p;return p;}
 async function essayer(fn){
@@ -525,7 +563,7 @@ function entreeRepas(v,t){return{p:v.pers,d:Math.round((t-v.arrivee)/6e4),a:v.ar
 async function asseoir(tables,n,serveur,o={}){
   const now=maintenant();const avant=prochainActuel();const a=o.attenteId&&S.attente[o.attenteId];
   await store.setVisite(nouvelId('v'),{tables:[...tables].sort((x,y)=>x-y),pers:n,serveur,arrivee:now,etape:'assis',depuis:now,nom:o.nom||'',attendu:a?Math.max(0,Math.round((now-a.ajout)/6e4)):0});
-  if(o.attenteId)await store.delAttente(o.attenteId);
+  if(o.attenteId){await store.delAttente(o.attenteId);informerInscription(a,'assis');}
   if(o.auto||serveur===avant){const s=suivant(serveur);if(s&&s!==S.prochain)await store.setRotation(s);}
   toast(libTables(tables)+' · '+n+' pers. · '+nomServeur(serveur));
 }
@@ -630,9 +668,11 @@ function preparerSimulation(){
   if(store.db){passerEnLocal();toast('La simulation tourne sur cet appareil seulement.');}
   if(UI.simT==null||UI.simT>maintenant())UI.simT=maintenant();
 }
-let dernierTick=Date.now(),dernierRendu=Date.now();
+let dernierTick=Date.now(),dernierRendu=Date.now(),derniereAttente=0;
 function tick(){
   const now=Date.now();const dt=Math.min(5000,now-dernierTick);dernierTick=now;
+  // Toutes les 5 s : inscriptions de démonstration, estimations pour les clients, avis automatiques.
+  if(now-derniereAttente>=5000){derniereAttente=now;if(!serviceActif()){importerInscriptionsDemo();publierEstimations();}verifierAvisAuto();}
   if(UI.vitesse>0&&!store.db){
     decalage+=dt*(UI.vitesse-1);
     const t=maintenant();if(UI.simT==null||UI.simT>t)UI.simT=t;
@@ -681,7 +721,16 @@ const ACTIONS={
   tour:async el=>{await store.setRotation(el.dataset.s);},
   'placer-attente':el=>{const a=S.attente[el.dataset.id];if(!a)return;UI.n=a.pers;faireProposition(a.pers,a.nom||'',el.dataset.id);},
   'placer-pret':async el=>{const id=el.dataset.id;const c=PRETS[id],a=S.attente[id];if(!c||!a)return;await asseoir(c.tables,a.pers,c.serveur,{auto:true,attenteId:id,nom:a.nom});},
-  'retirer-attente':async el=>{await store.delAttente(el.dataset.id);},
+  'retirer-attente':async el=>{const a=S.attente[el.dataset.id];await store.delAttente(el.dataset.id);informerInscription(a,'retire');},
+  prevenir:el=>{const id=el.dataset.id;const a=S.attente[id];if(!a)return;return envoyerAvis(id,PRETS[id]&&!(a.prevenu&&a.prevenu.prete)?'prete':'bientot');},
+  'voir-contact':el=>{UI.contactVisible=UI.contactVisible===el.dataset.id?null:el.dataset.id;},
+  replier:()=>{UI.attenteRepliee=!UI.attenteRepliee;sauverUI();},
+  'qr-plein':()=>{
+    const url=urlInscription();$('#qr-grand').innerHTML=qrSvg(url)||'<p style="color:#3d4a41">Code QR indisponible : vérifiez la connexion Internet.</p>';
+    $('#qr-url').textContent=url.replace(/^https?:\/\//,'').replace(/\?.*$/,'');$('#qr-plein').hidden=false;
+    try{const r=document.documentElement.requestFullscreen&&!document.fullscreenElement&&document.documentElement.requestFullscreen();if(r&&r.catch)r.catch(()=>{});}catch(e){}
+  },
+  'qr-fermer':()=>{$('#qr-plein').hidden=true;try{const r=document.fullscreenElement&&document.exitFullscreen();if(r&&r.catch)r.catch(()=>{});}catch(e){}},
   exemple:()=>chargerExemple(),
   'fin-service':()=>{if(UI.confirmFin&&Date.now()-UI.confirmFin<8000)return finDeService();UI.confirmFin=Date.now();},
   'fin-garder':()=>{UI.confirmFin=0;},
@@ -873,15 +922,131 @@ function carteRotation(){
   <p class="aide">${m==='tour'?'Chaque arrivée va au serveur suivant. S\'il n\'a pas de table adaptée, on passe au suivant.':'Chaque arrivée va au serveur qui a le moins de couverts en ce moment.'}</p>
   <ul class="liste">${li}</ul></section>`;
 }
-function carteAttente(){
-  const a=attenteTriee();const MAX=8;
-  const li=a.slice(0,MAX).map(([id,x])=>{
-    const c=PRETS[id];const m=minutesDepuis(x.ajout);
-    if(c)return `<li class="pret"><span class="point" aria-hidden="true"></span><div class="q"><b>${esc(x.nom||'Sans nom')} · ${x.pers} pers.</b><small>Table prête : ${libTables(c.tables)} · ${esc(nomServeur(c.serveur))} · attend depuis ${m} min</small></div><button class="prim" data-action="placer-pret" data-id="${esc(id)}">Placer ici</button><button class="lien" data-action="retirer-attente" data-id="${esc(id)}">Retirer</button></li>`;
-    const p=prevision(x.pers);const eta=p?(p.min===0?'Bientôt une table':`Table prévue dans ~${p.min} min`):'Groupe trop grand pour une rangée';
-    return `<li><div class="q"><b>${esc(x.nom||'Sans nom')} · ${x.pers} pers.</b><small>Attend depuis ${m} min · ${eta}</small></div><button data-action="placer-attente" data-id="${esc(id)}">Choisir</button><button class="lien" data-action="retirer-attente" data-id="${esc(id)}">Retirer</button></li>`;
-  }).join('')+(a.length>MAX?`<li><div class="q"><small>Et ${pluriel(a.length-MAX,'autre groupe','autres groupes')}, placés au fur et à mesure.</small></div></li>`:'');
-  return `<section class="carte"><div class="tete"><h2>Liste d'attente</h2>${a.length?`<span class="etat-sim">${pluriel(a.length,'groupe')}</span>`:''}</div>${a.length?`<ul class="liste">${li}</ul><p class="aide">Dès qu'une table convient au prochain groupe, elle lui est gardée (pointillés jaunes sur le plan) et sa ligne s'allume.</p>`:'<p class="vide">Personne en attente.</p>'}</section>`;
+// ---------- Liste d'attente (colonne de gauche) et code QR d'inscription ----------
+// Les clients s'inscrivent sur leur téléphone (inscription.html). Avec le serveur du restaurant branché
+// (bouton Veloce), l'inscription arrive ici par lui ; sinon, démonstration : seulement sur ce même appareil.
+const FORMULAIRE_PUBLIC='https://babmatjul.github.io/plan-de-salle-demo/inscription.html';
+const CLE_INSCR='plan-salle-inscriptions-v1',CLE_EST='plan-salle-estimations-v1',SEUIL_AVIS=10;
+const lireLS=(k,d)=>{try{const v=JSON.parse(localStorage.getItem(k)||'null');return v??d;}catch(e){return d;}};
+const ecrireLS=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}};
+const serviceActif=()=>!!(VEL.url&&VEL.cle&&VEL.etat==='ok');
+const veutAvis=a=>!!(a&&a.prevenir&&(a.prevenir.texto||a.prevenir.courriel));
+const telLisible=t=>{const d=String(t||'').replace(/\D/g,'').slice(-10);return d.length===10?`${d.slice(0,3)} ${d.slice(3,6)}-${d.slice(6)}`:esc(t||'');};
+function urlInscription(){
+  const local=location.protocol==='http:'&&/^(localhost|127\.0\.0\.1)$/.test(location.hostname);
+  const u=(location.protocol==='https:'&&!dansClaude())||local?new URL('inscription.html',location.href):new URL(FORMULAIRE_PUBLIC);
+  u.search='';u.hash='';
+  if(VEL.url&&VEL.cle)u.searchParams.set('s',VEL.url.replace(/\/+$/,''));
+  return u.href;
+}
+let cleQr='',svgQr='';
+function qrSvg(texte){
+  if(texte===cleQr)return svgQr;
+  if(typeof qrcode!=='function')return '';
+  try{const q=qrcode(0,'M');q.addData(texte);q.make();svgQr=q.createSvgTag({cellSize:4,margin:2,scalable:true,alt:'Code QR d\'inscription à la liste d\'attente'});cleQr=texte;return svgQr;}catch(e){return '';}
+}
+function ligneAttente(id,x){
+  const c=PRETS[id];const m=minutesDepuis(x.ajout);const p=c?null:prevision(x.pers);
+  const eta=c?`Table prête : ${libTables(c.tables)} · ${esc(nomServeur(c.serveur))}`:p?(p.min===0?'Bientôt une table':`Table prévue dans ~${p.min} min`):'Groupe trop grand pour une rangée';
+  const puces=[];
+  if(x.source==='qr')puces.push('<span class="puce">Code QR</span>');
+  if(veutAvis(x)){
+    const canal=[x.prevenir.texto?'Texto':'',x.prevenir.courriel?'Courriel':''].filter(Boolean).join(' + ');
+    const t=x.prevenu&&(x.prevenu.prete||x.prevenu.bientot);
+    puces.push(`<span class="puce${t?' ok':''}">${canal}${t?` · avis envoyé à ${hm(t)}`:''}</span>`);
+  }
+  const contact=x.contact&&(x.contact.telephone||x.contact.courriel)
+    ?`<small>${UI.contactVisible===id?[telLisible(x.contact.telephone),esc(x.contact.courriel||'')].filter(Boolean).join(' · ')+' ':''}<button class="lien" data-action="voir-contact" data-id="${esc(id)}">${UI.contactVisible===id?'Masquer':'Voir les coordonnées'}</button></small>`:'';
+  const type=c&&!(x.prevenu&&x.prevenu.prete)?'prete':'bientot';
+  const avis=veutAvis(x)&&!(x.prevenu&&x.prevenu[type])?`<button data-action="prevenir" data-id="${esc(id)}">${type==='prete'?'Prévenir : prête':'Prévenir'}</button>`:'';
+  return `<li class="${c?'pret':''}"><div class="q"><b>${c?'<span class="point" aria-hidden="true"></span> ':''}${esc(x.nom||'Sans nom')} · ${x.pers} pers.</b><small>Attend depuis ${m} min · ${eta}</small>${puces.length?`<span class="puces">${puces.join('')}</span>`:''}${contact}</div>
+  <div class="rang-mini">${c?`<button class="prim" data-action="placer-pret" data-id="${esc(id)}">Placer ici</button>`:`<button data-action="placer-attente" data-id="${esc(id)}">Choisir</button>`}${avis}<button class="lien" data-action="retirer-attente" data-id="${esc(id)}">Retirer</button></div></li>`;
+}
+function rendreAttente(){
+  const el=$('#attente'),corps=$('.corps');const visible=!vueServeur();
+  corps.classList.toggle('sans-attente',!visible);
+  corps.classList.toggle('attente-repliee',visible&&UI.attenteRepliee&&large.matches);
+  if(!visible){el.innerHTML='';return;}
+  const a=attenteTriee();const svg=qrSvg(urlInscription());
+  if(UI.attenteRepliee&&large.matches){
+    el.innerHTML=`<button class="deplier" data-action="replier" aria-label="Ouvrir la liste d'attente"><b>${a.length}</b><span>en attente</span>${Object.keys(PRETS).length?'<span class="point" aria-hidden="true"></span>':''}</button>
+    <button class="qr-icone" data-action="qr-plein" aria-label="Afficher en plein écran le code QR d'inscription">${svg||'QR'}</button>`;
+    return;
+  }
+  el.innerHTML=`<section class="carte"><div class="tete"><h2>Liste d'attente</h2><span class="etat-sim">${pluriel(a.length,'groupe')}</span>${large.matches?'<button class="lien" data-action="replier">Replier</button>':''}</div>
+  <button class="qr-mini" data-action="qr-plein" aria-label="Afficher en plein écran le code QR d'inscription">${svg?`<span class="qr">${svg}</span>`:'<span class="qr vide-qr">Code QR indisponible hors connexion</span>'}<b>Scannez pour vous inscrire</b><small>Toucher pour l'afficher en grand</small></button>
+  <p class="aide">${serviceActif()?'Inscriptions en ligne actives : elles arrivent ici toutes seules.':'Démonstration : tant que le serveur du restaurant n\'est pas branché (bouton Veloce), le formulaire n\'envoie l\'inscription qu\'à cet appareil.'}</p>
+  ${a.length?`<ul class="liste liste-attente">${a.map(([id,x])=>ligneAttente(id,x)).join('')}</ul>`:'<p class="vide">Personne en attente.</p>'}
+  <label class="bascule"><input type="checkbox" id="avis-auto" ${UI.avisAuto?'checked':''}>Prévenir tout seul les clients ${SEUIL_AVIS} min avant leur table</label>
+  <p class="aide">Dès qu'une table convient au prochain groupe, elle lui est gardée (pointillés jaunes sur le plan) et sa ligne s'allume.</p></section>`;
+}
+// Une inscription du formulaire (serveur ou démonstration) devient une ligne de la liste d'attente.
+const entreeInscription=(i,mode)=>({nom:[i.prenom,i.nom?i.nom[0]+'.':''].filter(Boolean).join(' '),pers:i.personnes,ajout:i.ajout,source:'qr',mode,inscription:i.id,
+  contact:{telephone:i.telephone||null,courriel:i.courriel||null},prevenir:i.prevenir||{},prevenu:i.prevenu&&!Array.isArray(i.prevenu)?i.prevenu:{}});
+async function fusionnerInscriptions(liste,mode){
+  const nouvelles=[];
+  for(const i of liste){
+    if(!i||!i.id||!Number.isFinite(i.personnes))continue;
+    const id='q'+i.id;const local=S.attente[id];
+    if(i.statut==='attente'){
+      if(!local&&!UI.inscriptionsFinies.has(i.id)){await store.setAttente(id,entreeInscription(i,mode));nouvelles.push(i);}
+      else if(local&&i.prevenu&&!Array.isArray(i.prevenu)&&JSON.stringify(local.prevenu||{})!==JSON.stringify({...(local.prevenu||{}),...i.prevenu}))await store.setAttente(id,{...local,prevenu:{...(local.prevenu||{}),...i.prevenu}});
+    }else if(local){UI.inscriptionsFinies.add(i.id);await store.delAttente(id);if(i.statut==='annule')toast(`${local.nom} a annulé son inscription`);}
+  }
+  if(nouvelles.length)toast(nouvelles.length>1?`${nouvelles.length} nouvelles inscriptions`:`Nouvelle inscription : ${nouvelles[0].prenom} · ${nouvelles[0].personnes} pers.`);
+}
+function importerInscriptionsDemo(){if(serviceActif())return;const l=lireLS(CLE_INSCR,[]);if(Array.isArray(l)&&l.length)fusionnerInscriptions(l,'demo');}
+function majInscriptionDemo(id,patch){
+  const l=lireLS(CLE_INSCR,[]);const i=Array.isArray(l)&&l.find(x=>x.id===id);if(i){Object.assign(i,patch);ecrireLS(CLE_INSCR,l);}
+  const e=lireLS(CLE_EST,{});e[id]={...(e[id]||{}),...patch};ecrireLS(CLE_EST,e);
+}
+// Placé ou retiré à l'accueil : le client le voit sur son téléphone.
+async function informerInscription(a,statut){
+  if(!a||a.source!=='qr')return;
+  UI.inscriptionsFinies.add(a.inscription);
+  if(a.mode==='service'&&VEL.url&&VEL.cle){try{await appelVeloce('/attente/'+encodeURIComponent(a.inscription),{methode:'POST',corps:{statut}});}catch(e){}}
+  else majInscriptionDemo(a.inscription,{statut});
+}
+// Position et attente estimée de chaque inscription, envoyées au client.
+function estimationsInscriptions(){
+  const r={};
+  attenteTriee().forEach(([id,a],i)=>{if(a.source!=='qr')return;const p=PRETS[id]?{min:0}:prevision(a.pers);r[a.inscription]={position:i+1,minutes:p?p.min:null,prete:!!PRETS[id]};});
+  return r;
+}
+let dernieresEstimations='';
+async function publierEstimations(){
+  const est=estimationsInscriptions();
+  if(serviceActif()){if(Object.keys(est).length)try{await appelVeloce('/attente/estimations',{methode:'POST',corps:est});}catch(e){}return;}
+  const cle=JSON.stringify(est);if(cle===dernieresEstimations)return;dernieresEstimations=cle;
+  const e=lireLS(CLE_EST,{});for(const [id,v] of Object.entries(est))e[id]={...(e[id]||{}),...v,statut:'attente'};ecrireLS(CLE_EST,e);
+}
+// Avis au client : par le serveur du restaurant (texto, courriel), ou simulé en démonstration. Un seul par type.
+const avisEnCours=new Set();
+async function envoyerAvis(id,type){
+  const a=S.attente[id];
+  if(!veutAvis(a)||(a.prevenu&&a.prevenu[type])||avisEnCours.has(id+type))return;
+  avisEnCours.add(id+type);
+  try{
+    let note='simulé (démonstration)';
+    if(a.mode==='service'&&serviceActif()){
+      const r=await appelVeloce('/attente/'+encodeURIComponent(a.inscription),{methode:'POST',corps:{prevenir:type}});
+      const env=(r&&r.envoi)||{};const v=Object.values(env).filter(x=>x&&typeof x==='object');
+      if(!env.deja&&!v.some(x=>x.envoye||x.demo)){toast(`Avis à ${a.nom} : l'envoi a échoué`);return;}
+      note=env.deja?'déjà envoyé':v.some(x=>x.envoye)?'envoyé':'simulé : aucun compte de textos ou de courriels réglé';
+    }else majInscriptionDemo(a.inscription,{prevenu:[...Object.keys(a.prevenu||{}),type]});
+    const cur=S.attente[id];if(cur)await store.setAttente(id,{...cur,prevenu:{...(cur.prevenu||{}),[type]:maintenant()}});
+    const canal=[a.prevenir.texto?'texto':'',a.prevenir.courriel?'courriel':''].filter(Boolean).join(' et ');
+    toast(`${a.nom} prévenu par ${canal} : table ${type==='prete'?'prête':'bientôt prête'} (${note})`);
+  }catch(e){toast(`Avis à ${a.nom} : ${e.message}`);}
+  finally{avisEnCours.delete(id+type);}
+}
+function verifierAvisAuto(){
+  if(!UI.avisAuto)return;
+  for(const [id,a] of attenteTriee()){
+    if(!veutAvis(a)||(a.prevenu&&a.prevenu.bientot))continue;
+    const p=PRETS[id]?{min:0}:prevision(a.pers);
+    if(p&&p.min<=SEUIL_AVIS)envoyerAvis(id,'bientot');
+  }
 }
 function cartePrevisions(filtre){
   const vs=Object.entries(S.visites).filter(([,v])=>!filtre||v.serveur===filtre).map(([id,v])=>({id,v,r:reste(v)})).sort((a,b)=>a.r-b.r).slice(0,6);
@@ -1061,7 +1226,7 @@ function rendrePanneau(){
     else if(UI.manuel)haut+=carteManuel();
     else if(UI.prop)haut+=carteProp();
     if(vides&&!UI.vitesse)haut+=carteDemarrer();
-    bas=carteSimulation()+carteADebarrasser()+carteAttente()+carteRotation()+cartePrevisions()+(vides?'':carteService());
+    bas=carteSimulation()+carteADebarrasser()+carteRotation()+cartePrevisions()+(vides?'':carteService());
   }
   $('#haut').innerHTML=haut;$('#bas').innerHTML=bas;
   if(fid){const el=document.getElementById(fid);if(el&&el!==act){el.focus({preventScroll:true});if(sel&&el.setSelectionRange)try{el.setSelectionRange(sel[0],sel[1]);}catch(e){}}}
@@ -1085,7 +1250,7 @@ function notifierPrets(){
 let enfonce=false,differe=false;
 function rendre(){
   if(enfonce){differe=true;return;}
-  ST=stats();PRETS=calculerPrets();nettoyerUI();notifierPrets();rendreEntete();rendrePlan();rendrePanneau();
+  ST=stats();PRETS=calculerPrets();nettoyerUI();notifierPrets();rendreEntete();rendrePlan();rendrePanneau();rendreAttente();
 }
 let toastT;function toast(m){const el=$('#toast');el.textContent=m;el.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>el.hidden=true,3500);}
 
@@ -1095,10 +1260,11 @@ function chargerVeloce(){
   VEL.saisieUrl=VEL.url||'';VEL.saisieCle=VEL.cle;VEL.etat=VEL.url&&VEL.cle?'connexion':'off';
 }
 function sauverVeloce(){try{localStorage.setItem(CLE_VELOCE,JSON.stringify({url:VEL.url,cle:VEL.cle,seq:VEL.seq}));}catch(e){}}
-async function appelVeloce(chemin,{auth=true}={}){
+async function appelVeloce(chemin,{auth=true,methode='GET',corps}={}){
   const ctrl=new AbortController();const t=setTimeout(()=>ctrl.abort(),8000);
   try{
-    const r=await fetch(VEL.url.replace(/\/+$/,'')+chemin,{headers:auth?{Authorization:'Bearer '+VEL.cle}:{},signal:ctrl.signal});
+    const entetes={...(auth?{Authorization:'Bearer '+VEL.cle}:{}),...(corps?{'Content-Type':'application/json'}:{})};
+    const r=await fetch(VEL.url.replace(/\/+$/,'')+chemin,{method:methode,headers:entetes,body:corps?JSON.stringify(corps):undefined,signal:ctrl.signal});
     if(r.status===401)throw new Error('Le connecteur refuse cette clé d\'accès.');
     if(!r.ok)throw new Error('Le connecteur a répondu une erreur ('+r.status+').');
     return await r.json();
@@ -1127,6 +1293,8 @@ async function sonderVeloce(complet){
     const {seq,evenements}=await appelVeloce('/evenements?depuis='+VEL.seq);
     for(const e of evenements||[])await appliquerPaiement(e);
     VEL.seq=Number(seq)||0;sauverVeloce();
+    // Liste d'attente en ligne : nouvelles inscriptions et annulations, puis estimations pour les clients.
+    try{const {inscriptions}=await appelVeloce('/attente');VEL.etat='ok';await fusionnerInscriptions(inscriptions||[],'service');PRETS=calculerPrets();await publierEstimations();}catch(e){}
     if(complet||Date.now()-VEL.infosA>5*6e4){
       VEL.sante=await appelVeloce('/sante',{auth:false});VEL.durees=await appelVeloce('/durees');VEL.affluence=await appelVeloce('/affluence');VEL.infosA=Date.now();
     }
@@ -1167,6 +1335,7 @@ document.addEventListener('change',e=>{
   if(el.id==='vue'){UI.vueServeur=el.value||null;UI.panneau='normal';UI.prop=null;UI.manuel=null;UI.selVisite=null;sauverUI();rendre();return;}
   if(el.id==='auto-placer'){UI.autoPlacer=el.checked;sauverUI();return;}
   if(el.id==='ecran'){garderEcran(el.checked);return;}
+  if(el.id==='avis-auto'){UI.avisAuto=el.checked;sauverUI();if(el.checked)verifierAvisAuto();return;}
   if(el.id==='pivot-auto'){UI.pivotAuto=el.checked;sauverUI();if(el.checked)orienterPlan();return;}
   if(el.dataset.actif){const s=infoServeur(el.dataset.actif);if(s){s.actif=el.checked;sauverConfigBientot();rendre();}}
 });
@@ -1268,11 +1437,16 @@ function carteTablette(){
   <p class="aide">Glissez le plan avec un doigt, pincez avec deux doigts pour zoomer.</p></section>`;
 }
 
+// Code QR plein écran : Échap le ferme. Une inscription faite sur cet appareil (démonstration) arrive aussitôt.
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#qr-plein').hidden)ACTIONS['qr-fermer']();});
+window.addEventListener('storage',e=>{if(e.key===CLE_INSCR)importerInscriptionsDemo();});
+
 // ---------- Démarrage ----------
 chargerLocal();
 chargerVeloce();
 if(!large.matches&&UI.zoom===1&&innerWidth<700)UI.zoom=2;
 ST=stats();rendre();
+importerInscriptionsDemo();
 requestAnimationFrame(orienterPlan);
 if(UI.ecran&&'wakeLock' in navigator)garderEcran(true);
 // Hors connexion et installation : seulement sur la page publiée en HTTPS (pas dans la page Claude).
