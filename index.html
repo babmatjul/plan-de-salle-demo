@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex">
-<meta name="description" content="Démo d'un plan de salle interactif : attribution des tables par rotation des serveurs et prévision des tables libres.">
+<meta name="description" content="Plan de salle interactif : attribution des tables par rotation des serveurs et prévision des tables libres.">
 <title>Plan de salle Beauport</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -129,7 +129,7 @@ button[disabled]{opacity:.55;cursor:default}
 .pas output b{font:700 20px var(--f-titre)}
 .tour{display:flex;align-items:center;gap:6px;font-size:14px;color:var(--muted);flex-wrap:wrap}
 .champ{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
-input[type=text]{font:400 15px var(--f-texte);color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-height:40px;width:100%}
+input[type=text],input[type=password],input[type=url]{font:400 15px var(--f-texte);color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-height:40px;width:100%}
 .rang{display:flex;flex-wrap:wrap;gap:8px}
 .rang>button{flex:1 1 auto}
 .etapes{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:6px}
@@ -199,6 +199,15 @@ input[type=text]{font:400 15px var(--f-texte);color:var(--fg);background:var(--b
 #plan .anneau.addition{stroke:var(--warn)}
 #plan .anneau.long{stroke:var(--danger)}
 #plan .pret{fill:none;stroke:var(--jaune);stroke-width:4;stroke-dasharray:7 5;pointer-events:none}
+#plan .tb.sale .f{fill:color-mix(in srgb,var(--muted) 16%,var(--surface));stroke:var(--muted);stroke-dasharray:4 3}
+#plan .tb.sale .num{fill:var(--fg);font-size:17px}
+#plan .tb.sale .lbl{font:600 12px var(--f-texte);fill:var(--muted)}
+#plan .tb.sale.long .f{stroke:var(--warn);stroke-width:3.5;stroke-dasharray:none}
+.lg-sale{background:color-mix(in srgb,var(--muted) 16%,var(--surface));border:2px dashed var(--muted)}
+.etat-veloce{display:flex;align-items:center;gap:8px;font-size:14px}
+.etat-veloce i{width:10px;height:10px;border-radius:50%;background:var(--muted);flex:none}
+.etat-veloce.ok i{background:var(--ok)}
+.etat-veloce.erreur i{background:var(--danger)}
 #plan .sel{fill:none;stroke:var(--fg);stroke-width:4;stroke-dasharray:10 6;pointer-events:none;animation:marche .9s linear infinite}
 @keyframes marche{to{stroke-dashoffset:-16}}
 @media (prefers-reduced-motion:reduce){#plan .sel,.point{animation:none}#plan .tb{transition:none}}
@@ -225,6 +234,7 @@ input[type=text]{font:400 15px var(--f-texte);color:var(--fg);background:var(--b
     <div class="chiffres" id="chiffres"></div>
     <div class="actions-barre">
       <select id="vue" aria-label="Vue de cet appareil"></select>
+      <button id="b-veloce" data-action="veloce" aria-pressed="false">Caisse</button>
       <button id="b-bilan" data-action="bilan" aria-pressed="false">Bilan</button>
       <button id="b-sections" data-action="sections" aria-pressed="false">Sections</button>
     </div>
@@ -241,7 +251,7 @@ input[type=text]{font:400 15px var(--f-texte);color:var(--fg);background:var(--b
         <div class="legende" aria-hidden="true">
           <span><i class="lg-libre"></i>Libre</span><span><i class="lg-occ"></i>Occupée, minutes restantes</span>
           <span><i class="lg-add"></i>Addition demandée</span><span><i class="lg-long"></i>Plus long que prévu</span>
-          <span><i class="lg-pret"></i>Gardée pour la liste d'attente</span><span><i class="lg-ferme"></i>Section fermée</span>
+          <span><i class="lg-sale"></i>À débarrasser</span><span><i class="lg-pret"></i>Gardée pour la liste d'attente</span><span><i class="lg-ferme"></i>Section fermée</span>
         </div>
       </div>
       <div class="cadre" id="cadre"><svg id="plan" viewBox="0 0 1290 1460" role="group" aria-label="Tables de la salle"></svg></div>
@@ -284,7 +294,7 @@ const ETAPES=[['assis','Assis'],['commande','Commande prise'],['plats','Plats se
 const ORDRE_ETAPE=Object.fromEntries(ETAPES.map(([k],i)=>[k,i]));
 const LIB_ETAPE=Object.fromEntries(ETAPES);
 const SUIVANTE={assis:'commande',commande:'plats',plats:'dessert',dessert:'addition'};
-const BOUTON_SUIVANT={assis:'Commande prise',commande:'Plats servis',plats:'Dessert, café',dessert:'Addition demandée',addition:'Libérer'};
+const BOUTON_SUIVANT={assis:'Commande prise',commande:'Plats servis',plats:'Dessert, café',dessert:'Addition demandée',addition:'Addition payée'};
 const PART={assis:1,commande:.85,plats:.6,dessert:.25}; // part du repas qui reste au début de chaque étape
 const BASE={a:45,b:55,c:65,d:75};                      // durées de départ (min), corrigées par l'historique
 const CAT=p=>p<=2?'a':p<=4?'b':p<=6?'c':'d';
@@ -298,12 +308,16 @@ const ZOOMS=[1,1.25,1.5,1.75,2,2.5,3,4]; // multiples de la taille « Ajuster »
 
 // ---------- État ----------
 const clone=o=>JSON.parse(JSON.stringify(o));
-const S={config:clone(CONFIG_DEFAUT),prochain:null,visites:{},attente:{},repas:[]};
+const S={config:clone(CONFIG_DEFAUT),prochain:null,visites:{},attente:{},repas:[],sale:{}}; // sale : tables payées, à débarrasser
 let decalage=0;                                  // avance de l'horloge simulée sur l'heure réelle (ms)
 const maintenant=()=>Date.now()+decalage;
 const UI={n:2,nom:'',prop:null,manuel:null,manuelAttente:null,selVisite:null,panneau:'normal',vueServeur:null,pinceau:'s1',zoom:1,pivot:false,
-  sync:'connexion',confirmFin:0,confirmHisto:0,chargement:false,configSale:false,vitesse:0,autoPlacer:true,simT:null,pretsConnus:null};
+  sync:'connexion',confirmFin:0,confirmHisto:0,chargement:false,configSale:false,vitesse:0,autoPlacer:true,simT:null,pretsConnus:null,selSale:null};
 let ST=null,PRETS={};
+// Connexion à la caisse Veloce, par le connecteur (dossier veloce/ du projet). Réglée et gardée sur cet appareil.
+const CLE_VELOCE='plan-salle-veloce-v1',PLACES=160;
+const VEL={url:'',cle:'',seq:0,etat:'off',message:'',sante:null,durees:null,affluence:null,conf:null,bilan:null,infosA:0,recents:[],saisieUrl:'',saisieCle:'',enCours:false};
+const argent=n=>Number(n||0).toLocaleString('fr-CA',{style:'currency',currency:'CAD'});
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const hm=t=>{const d=new Date(t);return d.getHours()+' h '+String(d.getMinutes()).padStart(2,'0');};
@@ -332,6 +346,8 @@ const actif=id=>!!infoServeur(id)?.actif;
 const actifs=()=>S.config.serveurs.filter(s=>s.actif).map(s=>s.id);
 const vueServeur=()=>UI.vueServeur&&infoServeur(UI.vueServeur)?UI.vueServeur:null;
 function occupation(){const m={};for(const [id,v] of Object.entries(S.visites))v.tables.forEach(t=>m[t]=id);return m;}
+// Tables indisponibles pour un nouveau groupe : occupées, ou payées mais pas encore débarrassées.
+function occupees(){const m=occupation();for(const n of Object.keys(S.sale))if(!m[n])m[n]='sale';return m;}
 function prochainActuel(){const a=actifs();return a.includes(S.prochain)?S.prochain:(a[0]||null);}
 function suivant(s){const a=actifs();if(!a.length)return null;const i=a.indexOf(s);return a[(i+1)%a.length];}
 function chargeParServeur(){const r={};S.config.serveurs.forEach(s=>r[s.id]={tables:0,couverts:0});for(const v of Object.values(S.visites)){if(!r[v.serveur])continue;r[v.serveur].tables+=v.tables.length;r[v.serveur].couverts+=v.pers;}return r;}
@@ -347,10 +363,14 @@ function stats(){
     const ds=tous.slice(-40).map(x=>x.d).sort((a,b)=>a-b);
     let med=null;if(ds.length){const m=Math.floor(ds.length/2);med=ds.length%2?ds[m]:Math.round((ds[m-1]+ds[m])/2);}
     const w=ds.length/(ds.length+5); // plus il y a de repas observés, plus ils comptent
-    r[k]={n:ds.length,tot:tous.length,med,est:med==null?BASE[k]:Math.round((1-w)*BASE[k]+w*med)};
+    const b=baseDuree(k);
+    r[k]={n:ds.length,tot:tous.length,med,base:b,est:med==null?b:Math.round((1-w)*b+w*med)};
   }
   return r;
 }
+// Durée de départ : celle apprise par Veloce (ajustée à l'heure et au jour) dès qu'elle repose sur assez de repas.
+const dureesVeloce=()=>!!(VEL.durees&&VEL.durees.maintenant&&Object.values(VEL.durees.maintenant).some(x=>x&&x.exemples>=5));
+function baseDuree(k){const v=VEL.durees&&VEL.durees.maintenant&&VEL.durees.maintenant[k];return v&&v.exemples>=5?v.minutes:BASE[k];}
 function reste(v){
   const est=ST[CAT(v.pers)].est;const depuis=(maintenant()-(v.depuis||v.arrivee))/6e4;
   if(v.etape==='addition')return Math.max(1,Math.round(8-depuis));
@@ -389,7 +409,7 @@ function ordreServeurs(){
   return ord;
 }
 function proposer(n,occ){
-  const cands=candidats(n,occ||occupation());const liste=[];const sautes=[];
+  const cands=candidats(n,occ||occupees());const liste=[];const sautes=[];
   for(const s of ordreServeurs()){
     const siens=cands.filter(c=>!c.cheval&&c.serveur===s).sort((x,y)=>x.cout-y.cout||x.tables[0]-y.tables[0]);
     if(!siens.length){if(!liste.length)sautes.push(s);continue;}
@@ -400,26 +420,26 @@ function proposer(n,occ){
   return liste;
 }
 function prevision(n){
-  const occ=occupation();const k=Math.ceil(n/2);let best=null;
+  const occ=occupees();const k=Math.ceil(n/2);let best=null;
   for(const f of fenetres(k)){
     if(!f.t.every(t=>actif(serveurDe(t))))continue;
-    let m=0;for(const t of f.t){const v=occ[t];if(v)m=Math.max(m,reste(S.visites[v]));}
+    let m=0;for(const t of f.t){const v=occ[t];if(v==='sale')m=Math.max(m,3);else if(v)m=Math.max(m,reste(S.visites[v]));}
     const c=m*10+f.coupes;if(!best||c<best.c)best={c,min:m,tables:f.t};
   }
   return best;
 }
 // Liste d'attente : dans l'ordre d'arrivée, chaque groupe se voit garder les premières tables qui lui conviennent.
 function attenteTriee(){return Object.entries(S.attente).filter(([,x])=>x&&Number.isFinite(x.pers)&&x.pers>0&&Number.isFinite(x.ajout)).sort((a,b)=>a[1].ajout-b[1].ajout);}
-function calculerPrets(){const occ=occupation();const r={};for(const [id,a] of attenteTriee()){const l=proposer(a.pers,occ);if(l.length){r[id]=l[0];l[0].tables.forEach(t=>occ[t]='attente:'+id);}}return r;}
-function occSansReserves(saufId){const occ=occupation();for(const [id,c] of Object.entries(PRETS))if(id!==saufId)c.tables.forEach(t=>{if(!occ[t])occ[t]='attente:'+id;});return occ;}
+function calculerPrets(){const occ=occupees();const r={};for(const [id,a] of attenteTriee()){const l=proposer(a.pers,occ);if(l.length){r[id]=l[0];l[0].tables.forEach(t=>occ[t]='attente:'+id);}}return r;}
+function occSansReserves(saufId){const occ=occupees();for(const [id,c] of Object.entries(PRETS))if(id!==saufId)c.tables.forEach(t=>{if(!occ[t])occ[t]='attente:'+id;});return occ;}
 
 // ---------- Enregistrement : base partagée si disponible, sinon cet appareil ----------
 const CLE='plan-salle-v1',CLE_UI='plan-salle-ui-v1';
 function chargerLocal(){
-  try{const d=JSON.parse(localStorage.getItem(CLE)||'null');if(d){S.config=normaliserConfig(d.config);S.prochain=d.prochain||null;S.visites=Object.fromEntries(Object.entries(d.visites||{}).filter(([,v])=>visiteValide(v)));S.attente=d.attente&&typeof d.attente==='object'?d.attente:{};S.repas=Array.isArray(d.repas)?d.repas:[];decalage=Number.isFinite(d.decalage)?d.decalage:0;}}catch(e){}
+  try{const d=JSON.parse(localStorage.getItem(CLE)||'null');if(d){S.config=normaliserConfig(d.config);S.prochain=d.prochain||null;S.visites=Object.fromEntries(Object.entries(d.visites||{}).filter(([,v])=>visiteValide(v)));S.attente=d.attente&&typeof d.attente==='object'?d.attente:{};S.repas=Array.isArray(d.repas)?d.repas:[];S.sale=d.sale&&typeof d.sale==='object'?d.sale:{};decalage=Number.isFinite(d.decalage)?d.decalage:0;}}catch(e){}
   try{const u=JSON.parse(localStorage.getItem(CLE_UI)||'null');if(u){UI.pivot=!!u.pivot;if(ZOOMS.includes(u.zoom))UI.zoom=u.zoom;UI.vueServeur=u.vueServeur||null;UI.autoPlacer=u.autoPlacer!==false;}}catch(e){}
 }
-function sauverLocal(){if(store.db)return;try{localStorage.setItem(CLE,JSON.stringify({config:S.config,prochain:S.prochain,visites:S.visites,attente:S.attente,repas:S.repas,decalage}));}catch(e){}}
+function sauverLocal(){if(store.db)return;try{localStorage.setItem(CLE,JSON.stringify({config:S.config,prochain:S.prochain,visites:S.visites,attente:S.attente,repas:S.repas,sale:S.sale,decalage}));}catch(e){}}
 function sauverUI(){try{localStorage.setItem(CLE_UI,JSON.stringify({pivot:UI.pivot,zoom:UI.zoom,vueServeur:UI.vueServeur,autoPlacer:UI.autoPlacer}));}catch(e){}}
 const files={};
 function ecrire(cle,fn){const p=(files[cle]||Promise.resolve()).then(()=>essayer(fn));files[cle]=p;return p;}
@@ -435,7 +455,7 @@ const abonnements=[];
 function passerEnLocal(){
   abonnements.splice(0).forEach(u=>{try{u();}catch(e){}});
   store.db=null;UI.sync='local';
-  S.config=normaliserConfig(S.config);S.visites=clone(S.visites);S.attente=clone(S.attente);S.repas=clone(S.repas);
+  S.config=normaliserConfig(S.config);S.visites=clone(S.visites);S.attente=clone(S.attente);S.repas=clone(S.repas);S.sale=clone(S.sale);
   sauverLocal();
 }
 function signalerErreur(e){
@@ -457,6 +477,7 @@ const store={
   setConfig(c){if(this.db)return ecrire('config',()=>this.db.doc('salle/config').set(c));S.config=c;apresLocal();},
   setRotation(p){if(this.db)return ecrire('rotation',()=>this.db.doc('salle/rotation').set({prochain:p}));S.prochain=p;apresLocal();},
   ajouterRepas(e){const repas=[...S.repas,e].slice(-400);if(this.db)return ecrire('historique',()=>this.db.doc('salle/historique').set({repas}));S.repas=repas;apresLocal();},
+  setSale(o){if(this.db)return ecrire('sale',()=>this.db.doc('salle/debarrasser').set({tables:o}));S.sale=o;apresLocal();},
   viderRepas(){if(this.db)return ecrire('historique',()=>this.db.doc('salle/historique').set({repas:[]}));S.repas=[];apresLocal();}
 };
 const nouvelId=p=>p+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
@@ -470,11 +491,16 @@ async function asseoir(tables,n,serveur,o={}){
   if(o.auto||serveur===avant){const s=suivant(serveur);if(s&&s!==S.prochain)await store.setRotation(s);}
   toast(libTables(tables)+' · '+n+' pers. · '+nomServeur(serveur));
 }
-async function liberer(id){
-  const v=S.visites[id];if(!v)return;const t=maintenant();const d=Math.round((t-v.arrivee)/6e4);
-  if(!v.exemple&&d>=5&&d<=300)await store.ajouterRepas(entreeRepas(v,t));
-  await store.delVisite(id);toast(libTables(v.tables)+(v.tables.length>1?' libérées':' libérée'));
+// Addition payée : le repas entre dans l'historique et ses tables passent « à débarrasser ».
+async function payer(id,{t=maintenant(),source='manuel',facture=null,total=null}={}){
+  const v=S.visites[id];if(!v)return;const d=Math.round((t-v.arrivee)/6e4);
+  if(!v.exemple&&d>=5&&d<=300&&!(facture&&S.repas.some(r=>r&&r.fv===facture)))await store.ajouterRepas(Object.assign(entreeRepas(v,t),facture?{fv:facture}:{}));
+  const sale={...S.sale};
+  v.tables.forEach(n=>{sale[n]=Object.assign({depuis:t,source},facture?{facture}:{},total!=null?{total}:{});});
+  await store.setSale(sale);await store.delVisite(id);
+  toast(libTables(v.tables)+' : à débarrasser');
 }
+async function debarrasser(n){const sale={...S.sale};delete sale[n];if(UI.selSale===n)UI.selSale=null;await store.setSale(sale);toast(`Table ${n} prête pour l'accueil`);}
 function faireProposition(n,nom,attenteId){
   let liste=proposer(n,occSansReserves(attenteId));
   const garde=attenteId&&PRETS[attenteId];
@@ -483,7 +509,7 @@ function faireProposition(n,nom,attenteId){
 }
 async function chargerExemple(){
   UI.chargement=true;rendre();
-  const occ={};const now=maintenant();const tailles=[2,2,4,1,2,3,4,2,2,6,2,4,5,2,3,2,4,2,1,2,2,4,3,2,2,6,2,4,2,2,3,2];const lot=[];
+  const occ=occupees();const now=maintenant();const tailles=[2,2,4,1,2,3,4,2,2,6,2,4,5,2,3,2,4,2,1,2,2,4,3,2,2,6,2,4,2,2,3,2];const lot=[];
   for(const n of tailles){
     const cs=candidats(n,occ).filter(c=>!c.cheval).sort(()=>Math.random()-.5).sort((a,b)=>a.cout-b.cout);if(!cs.length)continue;
     const c=cs[Math.floor(Math.random()*Math.min(6,cs.length))];c.tables.forEach(t=>occ[t]='x');
@@ -500,6 +526,7 @@ async function chargerExemple(){
 async function finDeService(){
   UI.chargement=true;rendre();
   for(const id of Object.keys(S.visites))await store.delVisite(id);
+  await store.setSale({});
   UI.chargement=false;UI.confirmFin=0;UI.selVisite=null;rendre();toast('Toutes les tables sont libres');
 }
 let minuterieConfig=null,versionConfig=0,versionSauvee=0;
@@ -513,6 +540,8 @@ async function enregistrerConfig(){
 
 function toucherTable(n){
   if(UI.panneau==='sections'){if(!infoServeur(UI.pinceau))return;S.config.affectation[n]=UI.pinceau;sauverConfigBientot();rendre();return;}
+  if(S.sale[n]){UI.selSale=n;UI.selVisite=null;UI.prop=null;UI.manuel=null;rendre();return;}
+  UI.selSale=null;
   const occ=occupation();
   if(occ[n]){UI.selVisite=occ[n];UI.prop=null;UI.manuel=null;rendre();return;}
   if(vueServeur()){toast('C\'est l\'accueil qui attribue les tables : choisissez « Vue accueil » pour asseoir un groupe.');return;}
@@ -535,11 +564,13 @@ function simAsseoir(c,n,nom,attenteId,t){
   const s=suivant(c.serveur);if(s)S.prochain=s;
 }
 function etapeSimulation(t){
-  // 1. Les repas avancent ; ceux qui sont finis libèrent leurs tables (et entrent dans l'historique).
+  // 0. Le personnel débarrasse les tables payées, 2 à 6 minutes après le paiement.
+  for(const [n,s] of Object.entries(S.sale))if(s.source==='simulation'&&s.fin<=t)delete S.sale[n];
+  // 1. Les repas avancent ; ceux qui sont finis paient (historique) et laissent leurs tables à débarrasser.
   for(const [id,v] of Object.entries(S.visites)){
     if(!v.duree)v.duree=tirerDuree(v.pers);
     const f=(t-v.arrivee)/6e4/v.duree;
-    if(f>=1){const d=Math.round((t-v.arrivee)/6e4);if(!v.exemple&&d>=5)S.repas=[...S.repas,entreeRepas(v,t)].slice(-400);delete S.visites[id];continue;}
+    if(f>=1){const d=Math.round((t-v.arrivee)/6e4);if(!v.exemple&&d>=5)S.repas=[...S.repas,entreeRepas(v,t)].slice(-400);v.tables.forEach(n=>{S.sale[n]={depuis:t,source:'simulation',fin:t+(2+Math.random()*4)*6e4};});delete S.visites[id];continue;}
     const e=f>=.9?'addition':f>=.75?'dessert':f>=.35?'plats':f>=.1?'commande':'assis';
     if(ORDRE_ETAPE[e]>(ORDRE_ETAPE[v.etape]??0)){v.etape=e;v.depuis=t;}
   }
@@ -548,7 +579,9 @@ function etapeSimulation(t){
   // 3. L'accueil place les groupes en attente dont la table est prête depuis une minute.
   if(UI.autoPlacer){const prets=calculerPrets();for(const [id,c] of Object.entries(prets)){const a=S.attente[id];if(!a)continue;if(!a.pret){a.pret=t;continue;}if(t-a.pret>=6e4)simAsseoir(c,a.pers,a.nom,id,t);}}
   // 4. De nouveaux groupes arrivent selon l'heure ; s'il y a déjà une file, ils s'y ajoutent.
-  const k=poisson(AFFLUENCE[new Date(t).getHours()]||0);
+  // Avec Veloce branché, la simulation rejoue l'affluence réelle de ce jour de semaine.
+  const aff=VEL.affluence&&Object.keys(VEL.affluence.groupesParMinute||{}).length?VEL.affluence.groupesParMinute:AFFLUENCE;
+  const k=poisson(aff[new Date(t).getHours()]||0);
   for(let i=0;i<k;i++){
     const n=tirerTaille();const nom=NOMS[Math.floor(Math.random()*NOMS.length)];
     if(!attenteTriee().length){const l=proposer(n);if(l.length){simAsseoir(l[0],n,nom,null,t);continue;}}
@@ -583,8 +616,27 @@ const ACTIONS={
   'asseoir-manuel':async()=>{const ts=[...UI.manuel].sort((a,b)=>a-b);const att=UI.manuelAttente;const nom=UI.nom.trim();UI.manuel=null;UI.manuelAttente=null;UI.nom='';await asseoir(ts,UI.n,serveurDe(ts[0]),{attenteId:att,nom});},
   vider:()=>{UI.manuel=null;UI.manuelAttente=null;},
   etape:async el=>{const id=UI.selVisite;if(id)await store.majVisite(id,{etape:el.dataset.e,depuis:maintenant()});},
-  'etape-suivante':async el=>{const id=el.dataset.v;const v=S.visites[id];if(!v)return;if(v.etape==='addition')return liberer(id);await store.majVisite(id,{etape:SUIVANTE[v.etape]||'commande',depuis:maintenant()});},
-  liberer:async()=>{const id=UI.selVisite;UI.selVisite=null;await liberer(id);},
+  'etape-suivante':async el=>{const id=el.dataset.v;const v=S.visites[id];if(!v)return;if(v.etape==='addition')return payer(id);await store.majVisite(id,{etape:SUIVANTE[v.etape]||'commande',depuis:maintenant()});},
+  payer:async()=>{const id=UI.selVisite;UI.selVisite=null;await payer(id);},
+  debarrasser:async el=>{await debarrasser(+el.dataset.n);},
+  'fermer-sale':()=>{UI.selSale=null;},
+  veloce:()=>{UI.panneau=UI.panneau==='veloce'?'normal':'veloce';UI.prop=null;UI.manuel=null;UI.selVisite=null;UI.selSale=null;},
+  'vel-connecter':async()=>{
+    const url=VEL.saisieUrl.trim(),cle=VEL.saisieCle.trim();
+    if(!/^https?:\/\/\S+$/.test(url)){toast('Indiquez l\'adresse du connecteur, par exemple http://127.0.0.1:8787');return;}
+    if(cle.length<8){toast('Indiquez la clé d\'accès du connecteur.');return;}
+    if(url!==VEL.url)VEL.seq=0;VEL.url=url;VEL.cle=cle;VEL.etat='connexion';VEL.message='';sauverVeloce();
+    await sonderVeloce(true);if(VEL.etat==='ok')toast('Connecté à la caisse Veloce');
+  },
+  'vel-deconnecter':()=>{VEL.url='';VEL.cle='';VEL.etat='off';VEL.message='';VEL.sante=VEL.durees=VEL.affluence=VEL.conf=VEL.bilan=null;sauverVeloce();},
+  'vel-importer':async()=>{try{VEL.conf=await appelVeloce('/configuration');if(!VEL.conf.serveurs.length)toast('Veloce n\'a renvoyé aucun serveur actif.');}catch(e){toast(e.message);}},
+  'vel-annuler-conf':()=>{VEL.conf=null;},
+  'vel-appliquer':async()=>{
+    const c=VEL.conf;if(!c||!c.serveurs||!c.serveurs.length)return;const ids=c.serveurs.map(s=>s.id);const aff={};
+    for(let n=1;n<=NB;n++)aff[n]=ids.includes(c.affectation[n])?c.affectation[n]:ids[0];
+    const conf=normaliserConfig({serveurs:c.serveurs.map(s=>({id:s.id,nom:s.nom,actif:true})),affectation:aff,mode:S.config.mode});
+    S.config=conf;VEL.conf=null;await store.setConfig(conf);toast('Serveurs et sections de Veloce appliqués au plan');
+  },
   'annuler-visite':async()=>{const id=UI.selVisite;UI.selVisite=null;await store.delVisite(id);toast('Place annulée');},
   'fermer-sel':()=>{UI.selVisite=null;},
   mode:async el=>{const c=clone(S.config);c.mode=el.dataset.m;S.config=c;await store.setConfig(c);},
@@ -598,15 +650,15 @@ const ACTIONS={
   vitesse:el=>{const v=+el.dataset.v;if(v>0)preparerSimulation();UI.vitesse=v;},
   'sim-service':()=>{
     preparerSimulation();
-    S.visites={};S.attente={};UI.prop=null;UI.manuel=null;UI.selVisite=null;UI.panneau='normal';
+    S.visites={};S.attente={};S.sale={};UI.prop=null;UI.manuel=null;UI.selVisite=null;UI.panneau='normal';
     const d=new Date();d.setHours(7,0,0,0);decalage=d.getTime()-Date.now();UI.simT=maintenant();UI.vitesse=30;
     // Le bilan du jour repart de zéro : on retire les repas d'un service simulé précédent le même jour.
     const jour=d.toDateString();S.repas=S.repas.filter(r=>!(r&&Number.isFinite(r.f)&&new Date(r.f).toDateString()===jour));
     sauverLocal();
     toast('Service simulé : ouverture à 7 h, le temps passe 30 fois plus vite');
   },
-  'sim-reset':()=>{UI.vitesse=0;S.visites={};S.attente={};decalage=0;UI.simT=null;UI.prop=null;UI.manuel=null;UI.selVisite=null;sauverLocal();toast('Salle vidée, retour à l\'heure réelle');},
-  bilan:()=>{UI.panneau=UI.panneau==='bilan'?'normal':'bilan';UI.prop=null;UI.manuel=null;UI.selVisite=null;},
+  'sim-reset':()=>{UI.vitesse=0;S.visites={};S.attente={};S.sale={};decalage=0;UI.simT=null;UI.prop=null;UI.manuel=null;UI.selVisite=null;sauverLocal();toast('Salle vidée, retour à l\'heure réelle');},
+  bilan:()=>{UI.panneau=UI.panneau==='bilan'?'normal':'bilan';UI.prop=null;UI.manuel=null;UI.selVisite=null;UI.selSale=null;if(UI.panneau==='bilan'){VEL.bilan=null;chargerBilanVeloce();}},
   'effacer-histo':async()=>{if(UI.confirmHisto&&Date.now()-UI.confirmHisto<8000){UI.confirmHisto=0;await store.viderRepas();toast('Historique effacé');return;}UI.confirmHisto=Date.now();},
   sections:async()=>{const entrer=UI.panneau!=='sections';UI.panneau=entrer?'sections':'normal';UI.prop=null;UI.manuel=null;UI.selVisite=null;if(!entrer)await enregistrerConfig();if(entrer&&!infoServeur(UI.pinceau))UI.pinceau=S.config.serveurs[0].id;},
   pinceau:el=>{UI.pinceau=el.dataset.s;},
@@ -648,6 +700,12 @@ function rendrePlan(){
   REPERES.forEach(([l,x,y])=>h+=txt(x,y,'repere',esc(l)));
   for(let n=1;n<=NB;n++){
     if(occ[n])continue;const t=TABLES[n];const s=serveurDe(n);const ferme=!edition&&!actif(s);const autre=moi&&s!==moi;
+    const sale=!edition&&S.sale[n];
+    if(sale){
+      const m=minutesDepuis(sale.depuis);const [x1,y1]=pos(t.x,t.y,-9),[x2,y2]=pos(t.x,t.y,12);
+      h+=`<g class="tb sale ${s}${m>=5?' long':''}${autre?' autre':''}" data-n="${n}" role="button" tabindex="0" aria-label="Table ${n}, à débarrasser depuis ${m} minutes">${rc(rect(t),'f',4)}${txt(x1,y1,'num',n)}${txt(x2,y2,'lbl','à déb.')}</g>`;
+      continue;
+    }
     h+=`<g class="tb ${s}${ferme?' ferme':''}${autre?' autre':''}" data-n="${n}" role="button" tabindex="0" aria-label="Table ${n}, ${ferme?'section fermée':'libre'}, ${esc(nomServeur(s))}">${rc(rect(t),'f',4)}${txt(t.x,t.y,'num',n)}</g>`;
   }
   if(!edition)for(const [id,v] of Object.entries(S.visites)){
@@ -687,8 +745,10 @@ let cleVue='';
 function rendreEntete(){
   const vs=Object.values(S.visites);const tables=somme(vs,v=>v.tables.length);const couv=somme(vs,v=>v.pers);
   const att=attenteTriee().length;const np=Object.keys(PRETS).length;const proch=vs.length?Math.min(...vs.map(reste)):null;
+  const sales=Object.values(S.sale);const salesLongues=sales.some(s=>minutesDepuis(s.depuis)>=5);
   const sync={direct:['direct','Partagé en direct'],connexion:['','Connexion…'],lent:['lent','Connexion lente, données peut-être pas à jour'],local:['','Démo sur cet appareil'],erreur:['erreur','Partage indisponible']}[UI.sync];
   $('#chiffres').innerHTML=`<span class="chip">Tables <b>${tables}</b>/80</span><span class="chip">Couverts <b>${couv}</b></span><span class="chip">Attente <b>${att}</b></span>`+
+    `<span class="chip${salesLongues?' alerte':''}">À débarrasser <b>${sales.length}</b></span>`+
     // Toutes les pastilles restent affichées pour que le bandeau ne change pas de hauteur pendant le service.
     `<span class="chip${np?' alerte':''}">${np?'<span class="point" aria-hidden="true"></span>':''}Tables prêtes <b>${np}</b></span>`+
     `<span class="chip">Prochaine table libre <b>${proch!=null?'~'+proch+'′':'—'}</b></span>`+
@@ -696,7 +756,7 @@ function rendreEntete(){
   const sel=$('#vue');const cle=S.config.serveurs.map(s=>s.id+':'+s.nom).join('|');
   if(cle!==cleVue){cleVue=cle;sel.innerHTML='<option value="">Vue accueil</option>'+S.config.serveurs.map(s=>`<option value="${s.id}">Vue ${esc(s.nom)}</option>`).join('');}
   const v=vueServeur()||'';if(sel.value!==v)sel.value=v;
-  for(const [id,p] of [['#b-bilan','bilan'],['#b-sections','sections']]){const b=$(id);b.classList.toggle('on',UI.panneau===p);b.setAttribute('aria-pressed',UI.panneau===p);}
+  for(const [id,p] of [['#b-veloce','veloce'],['#b-bilan','bilan'],['#b-sections','sections']]){const b=$(id);b.classList.toggle('on',UI.panneau===p);b.setAttribute('aria-pressed',UI.panneau===p);}
 }
 
 function carteArrivee(){
@@ -747,7 +807,8 @@ function carteVisite(id){
   <div class="meta"><span class="pastille"><i></i>${esc(nomServeur(v.serveur))}</span><span>${v.pers} pers.${v.nom?' · '+esc(v.nom):''}</span><span>Arrivés à ${hm(v.arrivee)}, il y a ${minutesDepuis(v.arrivee)} min</span></div>
   <div class="note${long?' alerte':''}">Libre vers <b>${hm(maintenant()+r*6e4)}</b>, dans ~${r} min.${long?` Repas plus long que la moyenne (${est} min).`:''}</div>
   <div class="etapes" role="group" aria-label="Étape du repas">${ETAPES.map(([k,l])=>`<button class="${v.etape===k?'on':''}" aria-pressed="${v.etape===k}" data-action="etape" data-e="${k}">${l}</button>`).join('')}</div>
-  <div class="rang"><button class="prim" data-action="liberer">Libérer ${v.tables.length>1?'les tables':'la table'}</button></div>
+  <div class="rang"><button class="prim" data-action="payer">Addition payée</button></div>
+  <p class="aide">${v.tables.length>1?'Les tables passeront':'La table passera'} « à débarrasser ». Avec la caisse Veloce branchée, c'est automatique au paiement.</p>
   <div><button class="lien" data-action="annuler-visite">Annuler cette place (erreur de saisie)</button></div></section>`;
 }
 function carteDemarrer(){
@@ -786,10 +847,10 @@ function carteAttente(){
 function cartePrevisions(filtre){
   const vs=Object.entries(S.visites).filter(([,v])=>!filtre||v.serveur===filtre).map(([id,v])=>({id,v,r:reste(v)})).sort((a,b)=>a.r-b.r).slice(0,6);
   const li=vs.map(({v,r})=>`<li class="${v.serveur}"><span class="pastille"><i></i></span><div class="q"><b>${libTables(v.tables)} · ${v.tables.length*2} places</b><small>${LIB_ETAPE[v.etape]||'Assis'} · arrivés à ${hm(v.arrivee)}</small></div><span class="eta">~${r}′</span></li>`).join('');
-  const lignes=Object.keys(BASE).map(k=>`<tr><td>${CAT_LIB[k]}</td><td>${BASE[k]} min</td><td>${ST[k].n?`${ST[k].med} min <small>(${ST[k].tot})</small>`:'—'}</td><td><b>${ST[k].est} min</b></td></tr>`).join('');
+  const lignes=Object.keys(BASE).map(k=>`<tr><td>${CAT_LIB[k]}</td><td>${ST[k].base} min</td><td>${ST[k].n?`${ST[k].med} min <small>(${ST[k].tot})</small>`:'—'}</td><td><b>${ST[k].est} min</b></td></tr>`).join('');
   return `<section class="carte"><div class="tete"><h2>Prochaines tables libres</h2></div>${vs.length?`<ul class="liste">${li}</ul>`:'<p class="vide">Aucune table occupée.</p>'}
   <div class="tete"><h2>Durée d'un repas</h2></div>
-  <div class="tableau"><table><thead><tr><th>Groupe</th><th>Départ</th><th>Observée</th><th>Utilisée</th></tr></thead><tbody>${lignes}</tbody></table></div>
+  <div class="tableau"><table><thead><tr><th>Groupe</th><th>${dureesVeloce()?'Veloce':'Départ'}</th><th>Observée</th><th>Utilisée</th></tr></thead><tbody>${lignes}</tbody></table></div>
   <p class="aide">Chaque table libérée ajoute sa durée réelle à l'historique (${S.repas.length} repas). Chaque étape du repas corrige ensuite l'estimation de la table en cours.</p></section>`;
 }
 function carteService(){
@@ -809,7 +870,7 @@ function carteMesTables(){
   <p class="grand">${esc(s.nom)}</p>
   <div class="meta"><span>${pluriel(mes.length,'groupe')} à table · ${couv} couverts</span><span>${servis} servi${servis>1?'s':''} aujourd'hui</span>${s.actif?'':'<span>Section fermée</span>'}</div>
   ${mes.length?`<ul class="liste">${li}</ul>`:'<p class="vide">Aucune table occupée dans votre section.</p>'}
-  <p class="aide">Le bouton de chaque ligne passe le repas à l'étape suivante ; à l'addition, il libère la table. Les autres sections sont estompées sur le plan.</p></section>`;
+  <p class="aide">Le bouton de chaque ligne passe le repas à l'étape suivante ; à l'addition, il marque la table payée (à débarrasser). Les autres sections sont estompées sur le plan.</p></section>`;
 }
 // ---------- Bilan du service (journée de l'horloge affichée) ----------
 function calculerBilan(){
@@ -828,26 +889,32 @@ function calculerBilan(){
     heures,hmin,hmax,parServeur,top:Object.entries(parTable).sort((a,b)=>b[1]-a[1]||a[0]-b[0]).slice(0,5)};
 }
 function pasLisible(max){for(const p of [1,2,5,10,20,25,50,100,200])if(max/p<=4)return p;return 500;}
-function graphHeures(b){
-  const L=340,Ht=150,ml=30,mb=22,mt=10;const hs=[];for(let h=b.hmin;h<=b.hmax;h++)hs.push({h,c:b.heures[h]?.c||0,g:b.heures[h]?.g||0});
-  const max=Math.max(1,...hs.map(x=>x.c));const p=pasLisible(max);const haut=Math.ceil(max/p)*p;const zone=Ht-mb-mt;
-  const bande=(L-ml)/hs.length;const bw=Math.min(28,bande*.62);
-  let s=`<svg viewBox="0 0 ${L} ${Ht}" role="img" aria-label="Couverts par heure d'arrivée">`;
+// Graphique en barres (une série) : points = [{ label, val, info }], info s'affiche au survol.
+function graphBarres(points,titre){
+  const L=340,Ht=150,ml=30,mb=22,mt=10;const zone=Ht-mb-mt;
+  const max=Math.max(1,...points.map(x=>x.val));const p=pasLisible(max);const haut=Math.ceil(max/p)*p;
+  const bande=(L-ml)/Math.max(1,points.length);const bw=Math.min(28,bande*.62);
+  let s=`<svg viewBox="0 0 ${L} ${Ht}" role="img" aria-label="${esc(titre)}">`;
   for(let v=0;v<=haut;v+=p){const y=mt+zone-(v/haut)*zone;s+=`<line class="${v?'grille':'axe'}" x1="${ml}" x2="${L}" y1="${y}" y2="${y}"/><text x="${ml-6}" y="${y}" text-anchor="end" dominant-baseline="central">${v}</text>`;}
-  hs.forEach((x,i)=>{
-    const cx=ml+i*bande+bande/2;const hgt=(x.c/haut)*zone;const y=mt+zone-hgt;const x0=cx-bw/2;const r=Math.min(4,hgt/2,bw/2);
-    if(x.c)s+=`<path class="bar" data-i="${i}" d="M${x0},${mt+zone} V${y+r} Q${x0},${y} ${x0+r},${y} H${x0+bw-r} Q${x0+bw},${y} ${x0+bw},${y+r} V${mt+zone} Z"/>`;
-    s+=`<text x="${cx}" y="${Ht-6}" text-anchor="middle">${x.h} h</text>`;
-    s+=`<rect class="cible" data-i="${i}" data-x="${cx}" data-y="${y}" data-info="${x.h} h – ${x.h+1} h : ${pluriel(x.c,'couvert')}, ${pluriel(x.g,'groupe')}" x="${ml+i*bande}" y="${mt}" width="${bande}" height="${zone}" tabindex="0" aria-label="${x.h} heures : ${x.c} couverts"/>`;
+  points.forEach((x,i)=>{
+    const cx=ml+i*bande+bande/2;const hgt=(x.val/haut)*zone;const y=mt+zone-hgt;const x0=cx-bw/2;const r=Math.min(4,hgt/2,bw/2);
+    if(x.val>0)s+=`<path class="bar" data-i="${i}" d="M${x0},${mt+zone} V${y+r} Q${x0},${y} ${x0+r},${y} H${x0+bw-r} Q${x0+bw},${y} ${x0+bw},${y+r} V${mt+zone} Z"/>`;
+    s+=`<text x="${cx}" y="${Ht-6}" text-anchor="middle">${esc(x.label)}</text>`;
+    s+=`<rect class="cible" data-i="${i}" data-x="${cx}" data-y="${y}" data-info="${esc(x.info)}" x="${ml+i*bande}" y="${mt}" width="${bande}" height="${zone}" tabindex="0" aria-label="${esc(x.info)}"/>`;
   });
   s+='</svg>';
-  const table=`<table class="sr"><caption>Couverts par heure d'arrivée</caption><tr><th>Heure</th><th>Couverts</th><th>Groupes</th></tr>${hs.map(x=>`<tr><td>${x.h} h</td><td>${x.c}</td><td>${x.g}</td></tr>`).join('')}</table>`;
+  const table=`<table class="sr"><caption>${esc(titre)}</caption>${points.map(x=>`<tr><td>${esc(x.label)}</td><td>${esc(x.info)}</td></tr>`).join('')}</table>`;
   return `<div class="graph">${s}<div class="bulle" hidden></div>${table}</div>`;
+}
+function graphHeures(b){
+  const pts=[];
+  for(let h=b.hmin;h<=b.hmax;h++){const c=b.heures[h]?.c||0,g=b.heures[h]?.g||0;pts.push({label:h+' h',val:c,info:`${h} h – ${h+1} h : ${pluriel(c,'couvert')}, ${pluriel(g,'groupe')}`});}
+  return graphBarres(pts,'Couverts par heure d\'arrivée');
 }
 function carteBilan(){
   const b=calculerBilan();const date=new Date(maintenant()).toLocaleDateString('fr-CA',{weekday:'long',day:'numeric',month:'long'});
   const tete=`<div class="tete"><h2>Bilan du service</h2><button class="lien" data-action="bilan">Fermer</button></div><p class="grand">${esc(date.charAt(0).toUpperCase()+date.slice(1))}</p>`;
-  if(!b.groupes)return `<section class="carte">${tete}<p class="vide">Aucun groupe aujourd'hui. Lancez une simulation de service pour remplir le bilan.</p><div class="rang"><button class="prim" data-action="sim-service">Lancer une simulation</button></div></section>`;
+  if(!b.groupes)return `<section class="carte">${tete}<p class="vide">Aucun groupe aujourd'hui. Lancez une simulation de service pour remplir le bilan.</p><div class="rang"><button class="prim" data-action="sim-service">Lancer une simulation</button></div></section>`+carteBilanVeloce();
   const moy=(b.couverts/b.groupes).toFixed(1).replace('.',',');
   const tuiles=`<div class="tuiles">
     <div class="tuile"><small>Groupes</small><b>${b.groupes}</b><small>dont ${b.enCours} à table</small></div>
@@ -865,7 +932,7 @@ function carteBilan(){
   <section class="carte"><div class="tete"><h2>Par serveur</h2></div><p class="aide">Part des couverts de la journée : une rotation équitable donne des parts proches.</p><ul class="liste parts">${parts}</ul></section>
   <section class="carte"><div class="tete"><h2>Durée par taille de groupe</h2></div><div class="tableau"><table><thead><tr><th>Groupe</th><th>Repas</th><th>Médiane</th><th>Estimation</th></tr></thead><tbody>${lignes}</tbody></table></div><p class="aide">Sur tout l'historique : c'est ce que l'estimation apprend.</p></section>
   <section class="carte"><div class="tete"><h2>Tables les plus demandées</h2></div>${top?`<ol class="top">${top}</ol>`:'<p class="vide">Pas encore de données.</p>'}
-  <div class="rang"><button class="danger" data-action="effacer-histo">${conf?'Confirmer : effacer l\'historique':'Effacer l\'historique'}</button></div><p class="aide">Effacer l'historique remet aussi l'apprentissage des durées à zéro.</p></section>`;
+  <div class="rang"><button class="danger" data-action="effacer-histo">${conf?'Confirmer : effacer l\'historique':'Effacer l\'historique'}</button></div><p class="aide">Effacer l'historique remet aussi l'apprentissage des durées à zéro.</p></section>${carteBilanVeloce()}`;
 }
 function carteSections(){
   const tot=tablesParServeur();const n=S.config.serveurs.length;
@@ -877,28 +944,90 @@ function carteSections(){
   <ul class="liste">${li}</ul>
   <div class="rang">${n<5?'<button data-action="ajout-serveur">Ajouter un serveur</button>':''}${n>1?'<button data-action="retrait-serveur">Retirer le dernier</button>':''}<button data-action="origine">Sections d'origine</button></div></section>`;
 }
+// ---------- Tables à débarrasser ----------
+const libSource=s=>s.source==='veloce'?'Payée dans Veloce':s.source==='simulation'?'Payée (simulation)':'Addition payée';
+function carteSale(n){
+  const s=S.sale[n];const m=minutesDepuis(s.depuis);
+  return `<section class="carte prop ${serveurDe(n)}"><div class="tete"><h2>À débarrasser</h2><button class="lien" data-action="fermer-sale">Fermer</button></div>
+  <p class="grand">Table ${n}</p>
+  <div class="meta"><span>${libSource(s)} à ${hm(s.depuis)}${s.total!=null?' · '+argent(s.total):''}</span><span>depuis ${m} min</span></div>
+  <div class="rang"><button class="prim" data-action="debarrasser" data-n="${n}">Table débarrassée</button></div>
+  <p class="aide">Une fois débarrassée, la table redevient libre pour l'accueil.</p></section>`;
+}
+function carteADebarrasser(){
+  const l=Object.entries(S.sale).sort((a,b)=>a[1].depuis-b[1].depuis);if(!l.length)return '';
+  const li=l.slice(0,6).map(([n,s])=>{const m=minutesDepuis(s.depuis);
+    return `<li class="${m>=5?'pret':''}"><div class="q"><b>Table ${n}</b><small>${libSource(s)} · depuis ${m} min</small></div><button data-action="debarrasser" data-n="${n}">Débarrassée</button></li>`;}).join('');
+  return `<section class="carte"><div class="tete"><h2>À débarrasser</h2><span class="etat-sim">${pluriel(l.length,'table')}</span></div><ul class="liste">${li}${l.length>6?`<li><div class="q"><small>Et ${pluriel(l.length-6,'autre table','autres tables')}.</small></div></li>`:''}</ul></section>`;
+}
+// ---------- Caisse Veloce ----------
+const dansClaude=()=>!!(window.claude&&window.claude.use);
+function carteVeloce(){
+  const s=VEL.sante,etat=VEL.etat;
+  const lib=etat==='ok'?`Connectée${s&&s.dernierSucces?` · synchro il y a ${Math.max(0,Math.round((Date.now()-s.dernierSucces)/1000))} s`:''}${s&&s.retardCaisseSecondes!=null?` · délai de la caisse ~${s.retardCaisseSecondes} s`:''}`
+    :etat==='erreur'?esc(VEL.message):etat==='connexion'?'Connexion…':'Non connectée';
+  const durees=VEL.durees?Object.keys(BASE).map(k=>{const p=VEL.durees.parTaille&&VEL.durees.parTaille[k];return `<tr><td>${CAT_LIB[k]}</td><td>${p?p.mediane+' min':'—'}</td><td>${p?p.n:0}</td><td><b>${ST[k].base} min</b></td></tr>`;}).join(''):'';
+  const c=VEL.conf;
+  const apercu=c&&c.serveurs?`<div class="note"><b>Proposition de Veloce</b><ul class="liste">${c.serveurs.map(x=>`<li class="${x.id}"><span class="pastille"><i></i></span><div class="q"><b>${esc(x.nom)}</b><small>${esc(((x.veloce&&x.veloce.employes)||[]).join(', ')||'—')} · ${pluriel(Object.values(c.affectation||{}).filter(a=>a===x.id).length,'table')}</small></div></li>`).join('')}</ul>${c.sansSection&&c.sansSection.length?`<p class="aide">${pluriel(c.sansSection.length,'table')} sans historique iront à ${esc(c.serveurs[0]?c.serveurs[0].nom:'la première section')}.</p>`:''}<div class="rang"><button class="prim" data-action="vel-appliquer">Appliquer au plan</button><button data-action="vel-annuler-conf">Annuler</button></div></div>`:'';
+  return `<section class="carte"><div class="tete"><h2>Caisse Veloce</h2><button class="lien" data-action="veloce">Fermer</button></div>
+  <div class="etat-veloce ${etat}"><i></i><span>${lib}</span></div>
+  ${dansClaude()?'<div class="note alerte">Depuis la page Claude, le navigateur ne peut pas joindre le connecteur : utilisez le lien GitHub ou la version installée sur la tablette.</div>':''}
+  <label class="champ" for="vel-url">Adresse du connecteur<input id="vel-url" type="url" autocomplete="off" placeholder="http://127.0.0.1:8787" value="${esc(VEL.saisieUrl)}"></label>
+  <label class="champ" for="vel-cle">Clé d'accès<input id="vel-cle" type="password" autocomplete="off" value="${esc(VEL.saisieCle)}"></label>
+  <div class="rang"><button class="prim" data-action="vel-connecter">${etat==='ok'?'Reconnecter':'Connecter'}</button>${VEL.url?'<button data-action="vel-deconnecter">Déconnecter</button>':''}</div>
+  <p class="aide">Le connecteur tourne sur un ordinateur du restaurant ou sur un serveur : c'est lui qui garde les identifiants Veloce. La clé d'accès est celle de son fichier .env ; elle reste enregistrée sur cet appareil seulement.</p></section>
+  ${etat==='ok'?`<section class="carte"><div class="tete"><h2>Tables payées</h2></div>
+  <p class="aide">Une table payée en caisse passe « à débarrasser » sur le plan${s&&s.retardCaisseSecondes!=null?`, environ ${s.retardCaisseSecondes} s après le paiement`:''}.</p>
+  ${VEL.recents.length?`<ul class="liste">${VEL.recents.map(r=>`<li><div class="q"><b>Table ${r.table}</b><small>payée à ${hm(r.a)}${r.total!=null?' · '+argent(r.total):''}</small></div></li>`).join('')}</ul>`:'<p class="vide">Aucune table payée depuis la connexion.</p>'}
+  ${durees?`<div class="tete"><h2>Durées apprises</h2></div><div class="tableau"><table><thead><tr><th>Groupe</th><th>Médiane</th><th>Repas</th><th>Maintenant</th></tr></thead><tbody>${durees}</tbody></table></div><p class="aide">« Maintenant » tient compte de l'heure et du jour ; c'est la durée qu'utilise le plan.</p>`:''}
+  <div class="tete"><h2>Serveurs et sections</h2></div><p class="aide">Reprend les sections de Veloce et les tables que chaque serveur sert d'habitude.</p>
+  ${apercu||'<div class="rang"><button data-action="vel-importer">Importer de Veloce</button></div>'}</section>`:''}`;
+}
+function carteBilanVeloce(){
+  if(VEL.etat!=='ok')return '';
+  const b=VEL.bilan;
+  if(!b)return `<section class="carte"><div class="tete"><h2>Ventes du jour (Veloce)</h2></div><p class="vide">Chargement…</p></section>`;
+  if(b.erreur)return `<section class="carte"><div class="tete"><h2>Ventes du jour (Veloce)</h2></div><p class="vide">${esc(b.erreur)}</p></section>`;
+  const tuiles=`<div class="tuiles">
+    <div class="tuile"><small>Ventes en salle</small><b>${argent(b.ventesSalle)}</b><small>${pluriel(b.groupes,'groupe')} · ${pluriel(b.couverts,'couvert')}</small></div>
+    <div class="tuile"><small>Par place et par heure</small><b>${argent(b.ventesParPlaceHeure)}</b><small>sur ${PLACES} places</small></div>
+    <div class="tuile"><small>Ticket par client</small><b>${b.ticketParClient!=null?argent(b.ticketParClient):'—'}</b><small>${b.ticketParGroupe!=null?argent(b.ticketParGroupe)+' par groupe':'—'}</small></div>
+    <div class="tuile"><small>Pourboires</small><b>${argent(b.pourboires)}</b><small>en salle</small></div></div>`;
+  const serv=(b.parServeur||[]).slice(0,6).map(x=>`<li><div class="q"><b>${esc(x.nom)}</b><small>${pluriel(x.groupes,'groupe')} · ${argent(x.ventes)} · pourboires ${argent(x.pourboires)}</small><div class="piste"><div class="rempli" style="width:${Math.round(x.partVentes*100)}%;background:var(--vert)"></div></div></div><span class="eta">${Math.round(x.partVentes*100)} %</span></li>`).join('');
+  const tables=(b.parTable||[]);const top=tables.slice(0,5).map(t=>`<li>Table ${t.table} · ${argent(t.ventesParHeure)} de l'heure (${pluriel(t.groupes,'groupe')})</li>`).join('');
+  const bas=tables.length>5?tables.slice(-3).reverse().map(t=>`<li>Table ${t.table} · ${argent(t.ventesParHeure)} de l'heure</li>`).join(''):'';
+  const a=VEL.affluence;const jours=['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
+  const ga=a&&a.besoin&&a.joursObserves?graphBarres(a.besoin.filter(h=>h.heure>=6&&h.heure<=15).map(h=>({label:h.heure+' h',val:Math.round(h.arrivees),info:`${h.heure} h : environ ${Math.round(h.arrivees)} couverts, ${pluriel(h.serveurs,'serveur')} conseillé${h.serveurs>1?'s':''}`})),'Couverts attendus par heure'):'';
+  return `<section class="carte"><div class="tete"><h2>Ventes du jour (Veloce)</h2></div>${tuiles}</section>
+  <section class="carte"><div class="tete"><h2>Ventes par serveur</h2></div><ul class="liste parts">${serv||'<li><div class="q"><small>Pas encore de ventes aujourd\'hui.</small></div></li>'}</ul></section>
+  <section class="carte"><div class="tete"><h2>Rentabilité des tables</h2></div><p class="aide">Ventes par heure d'occupation de la table.</p>${top?`<ol class="top">${top}</ol>${bas?`<p class="aide">Les moins rentables :</p><ol class="top">${bas}</ol>`:''}`:'<p class="vide">Pas encore de données.</p>'}</section>
+  ${ga?`<section class="carte"><div class="tete"><h2>Affluence attendue (${jours[a.jour]})</h2></div>${ga}<p class="aide">Moyenne des ${a.joursObserves} derniers ${jours[a.jour]}s. Serveurs conseillés : ${a.besoin.filter(h=>h.serveurs).map(h=>h.heure+' h : '+h.serveurs).join(' · ')}.</p></section>`:''}`;
+}
 function rendrePanneau(){
   const act=document.activeElement;const fid=act&&act.id;const sel=fid&&act.selectionStart!=null?[act.selectionStart,act.selectionEnd]:null;
   let haut='',bas='';const vides=!Object.keys(S.visites).length;
+  const fiche=UI.selSale&&S.sale[UI.selSale]?carteSale(UI.selSale):UI.selVisite&&S.visites[UI.selVisite]?carteVisite(UI.selVisite):'';
   if(UI.panneau==='sections')haut=carteSections();
   else if(UI.panneau==='bilan')haut=carteBilan();
+  else if(UI.panneau==='veloce')haut=carteVeloce();
   else if(vueServeur()){
-    haut=(UI.selVisite&&S.visites[UI.selVisite]?carteVisite(UI.selVisite):'')+carteMesTables();
+    haut=fiche+carteMesTables();
     bas=cartePrevisions(vueServeur());
   }else{
     haut=carteArrivee();
-    if(UI.selVisite&&S.visites[UI.selVisite])haut+=carteVisite(UI.selVisite);
+    if(fiche)haut+=fiche;
     else if(UI.manuel)haut+=carteManuel();
     else if(UI.prop)haut+=carteProp();
     if(vides&&!UI.vitesse)haut+=carteDemarrer();
-    bas=carteSimulation()+carteAttente()+carteRotation()+cartePrevisions()+(vides?'':carteService());
+    bas=carteSimulation()+carteADebarrasser()+carteAttente()+carteRotation()+cartePrevisions()+(vides?'':carteService());
   }
   $('#haut').innerHTML=haut;$('#bas').innerHTML=bas;
   if(fid){const el=document.getElementById(fid);if(el&&el!==act){el.focus({preventScroll:true});if(sel&&el.setSelectionRange)try{el.setSelectionRange(sel[0],sel[1]);}catch(e){}}}
 }
 function nettoyerUI(){
   if(UI.selVisite&&!S.visites[UI.selVisite])UI.selVisite=null;
-  const occ=occupation();
+  if(UI.selSale&&!S.sale[UI.selSale])UI.selSale=null;
+  const occ=occupees();
   if(UI.manuel){for(const n of [...UI.manuel])if(occ[n])UI.manuel.delete(n);if(!UI.manuel.size)UI.manuel=null;}
   if(UI.prop&&UI.prop.attenteId&&!S.attente[UI.prop.attenteId])UI.prop.attenteId=null;
   if(UI.prop&&UI.prop.liste.length){const c=UI.prop.liste[UI.prop.idx];if(!c||c.tables.some(n=>occ[n]||!actif(serveurDe(n))))faireProposition(UI.prop.n,UI.prop.nom,UI.prop.attenteId);}
@@ -918,6 +1047,59 @@ function rendre(){
 }
 let toastT;function toast(m){const el=$('#toast');el.textContent=m;el.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>el.hidden=true,3500);}
 
+// ---------- Échanges avec le connecteur Veloce (toutes les 10 secondes) ----------
+function chargerVeloce(){
+  try{const d=JSON.parse(localStorage.getItem(CLE_VELOCE)||'null');if(d){VEL.url=d.url||'';VEL.cle=d.cle||'';VEL.seq=Number(d.seq)||0;}}catch(e){}
+  VEL.saisieUrl=VEL.url||'http://127.0.0.1:8787';VEL.saisieCle=VEL.cle;VEL.etat=VEL.url&&VEL.cle?'connexion':'off';
+}
+function sauverVeloce(){try{localStorage.setItem(CLE_VELOCE,JSON.stringify({url:VEL.url,cle:VEL.cle,seq:VEL.seq}));}catch(e){}}
+async function appelVeloce(chemin,{auth=true}={}){
+  const ctrl=new AbortController();const t=setTimeout(()=>ctrl.abort(),8000);
+  try{
+    const r=await fetch(VEL.url.replace(/\/+$/,'')+chemin,{headers:auth?{Authorization:'Bearer '+VEL.cle}:{},signal:ctrl.signal});
+    if(r.status===401)throw new Error('Le connecteur refuse cette clé d\'accès.');
+    if(!r.ok)throw new Error('Le connecteur a répondu une erreur ('+r.status+').');
+    return await r.json();
+  }catch(e){
+    if(e.name==='AbortError')throw new Error('Le connecteur ne répond pas.');
+    if(e instanceof TypeError)throw new Error('Connecteur injoignable : vérifiez qu\'il tourne, son adresse, et que cette page figure dans ORIGINES_AUTORISEES.');
+    throw e;
+  }finally{clearTimeout(t);}
+}
+// Une table payée en caisse : le repas se termine et la table passe « à débarrasser ».
+async function appliquerPaiement(e){
+  const n=Number(e.table);if(!TABLES[n])return;
+  if(Date.now()-(Number(e.fermeture)||0)>30*6e4)return;                                     // paiement trop ancien
+  if((S.sale[n]&&S.sale[n].facture===e.facture)||S.repas.some(r=>r&&r.fv===e.facture))return; // déjà traité (autre appareil)
+  const t=Math.min(maintenant(),Number(e.fermeture)||maintenant());
+  const vid=occupation()[n];
+  if(vid)await payer(vid,{t,source:'veloce',facture:e.facture,total:e.total});
+  else await store.setSale({...S.sale,[n]:{depuis:t,source:'veloce',facture:e.facture,total:e.total}});
+  VEL.recents=[{table:n,a:t,total:e.total},...VEL.recents].slice(0,5);
+  toast(`Table ${n} payée dans Veloce : à débarrasser`);
+}
+async function sonderVeloce(complet){
+  if(!VEL.url||!VEL.cle||VEL.enCours)return;
+  VEL.enCours=true;
+  try{
+    const {seq,evenements}=await appelVeloce('/evenements?depuis='+VEL.seq);
+    for(const e of evenements||[])await appliquerPaiement(e);
+    VEL.seq=Number(seq)||0;sauverVeloce();
+    if(complet||Date.now()-VEL.infosA>5*6e4){
+      VEL.sante=await appelVeloce('/sante',{auth:false});VEL.durees=await appelVeloce('/durees');VEL.affluence=await appelVeloce('/affluence');VEL.infosA=Date.now();
+    }
+    VEL.etat='ok';VEL.message='';
+  }catch(e){VEL.etat='erreur';VEL.message=e.message||'Connecteur injoignable.';}
+  finally{VEL.enCours=false;}
+  rendre();
+}
+async function chargerBilanVeloce(){
+  if(VEL.etat!=='ok')return;
+  const d=new Date(maintenant());const date=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  try{VEL.bilan=await appelVeloce('/bilan?date='+date);}catch(e){VEL.bilan={erreur:e.message};}
+  rendre();
+}
+
 // ---------- Événements ----------
 document.addEventListener('pointerdown',()=>{enfonce=true;},true);
 const relacher=()=>{enfonce=false;if(differe){differe=false;setTimeout(rendre,0);}};
@@ -934,6 +1116,8 @@ document.addEventListener('keydown',e=>{const t=e.target.closest&&e.target.close
 document.addEventListener('input',e=>{
   const el=e.target;
   if(el.id==='nom'){UI.nom=el.value;return;}
+  if(el.id==='vel-url'){VEL.saisieUrl=el.value;return;}
+  if(el.id==='vel-cle'){VEL.saisieCle=el.value;return;}
   if(el.dataset.serveur){const s=infoServeur(el.dataset.serveur);if(s){s.nom=el.value.slice(0,40);sauverConfigBientot();}}
 });
 document.addEventListener('change',e=>{
@@ -990,9 +1174,12 @@ if(window.ResizeObserver)new ResizeObserver(()=>appliquerZoom()).observe(cadre);
 
 // ---------- Démarrage ----------
 chargerLocal();
+chargerVeloce();
 if(!large.matches&&UI.zoom===1)UI.zoom=2;
 ST=stats();rendre();
 setInterval(tick,1000);
+setInterval(()=>sonderVeloce(false),10000);
+sonderVeloce(true);
 large.addEventListener('change',rendre);
 
 (async()=>{
@@ -1003,7 +1190,7 @@ large.addEventListener('change',rendre);
   // Sans base, ou sans droit d'écriture sur le plan partagé : démo sur cet appareil.
   if(!db||ecriture===false){UI.sync='local';rendre();return;}
   store.db=db;decalage=0;UI.vitesse=0;
-  S.config=clone(CONFIG_DEFAUT);S.prochain=null;S.visites={};S.attente={};S.repas=[];rendre();
+  S.config=clone(CONFIG_DEFAUT);S.prochain=null;S.visites={};S.attente={};S.repas=[];S.sale={};rendre();
   const t=setTimeout(()=>{if(UI.sync==='connexion'){UI.sync='lent';rendre();}},10000);
   const recu=s=>{if(!s.metadata.fromCache&&UI.sync!=='erreur'){clearTimeout(t);UI.sync='direct';}};
   const erreur=e=>{clearTimeout(t);UI.sync='erreur';rendre();};
@@ -1012,7 +1199,8 @@ large.addEventListener('change',rendre);
     db.doc('salle/rotation').onSnapshot(s=>{recu(s);S.prochain=s.exists?(s.data().prochain||null):null;rendre();},erreur),
     db.doc('salle/historique').onSnapshot(s=>{recu(s);const r=s.exists?s.data().repas:null;S.repas=Array.isArray(r)?r.filter(x=>x&&Number.isFinite(x.p)&&Number.isFinite(x.d)):[];rendre();},erreur),
     db.collection('visites').onSnapshot(q=>{recu(q);const v={};q.docs.forEach(d=>{const x=d.data();if(visiteValide(x))v[d.id]=x;});S.visites=v;rendre();},erreur),
-    db.collection('attente').onSnapshot(q=>{recu(q);const a={};q.docs.forEach(d=>{a[d.id]=d.data();});S.attente=a;rendre();},erreur));
+    db.collection('attente').onSnapshot(q=>{recu(q);const a={};q.docs.forEach(d=>{a[d.id]=d.data();});S.attente=a;rendre();},erreur),
+    db.doc('salle/debarrasser').onSnapshot(s=>{recu(s);const t=s.exists?s.data().tables:null;S.sale=t&&typeof t==='object'?clone(t):{};rendre();},erreur));
 })();
 </script>
 </body>
